@@ -24,7 +24,7 @@ def classify(text):
         return Intent("local")
     # Important: "investiga" and "explícame" are information requests,
     # not automatic Google/browser actions.
-    if re.match(r"^(?:jarvis )?(?:investiga|explica|explicame|dime|que es|como funciona|cuales son|resume|resumeme|hazme un resumen)\\b", n):
+    if re.match(r"^(?:jarvis )?(?:investiga|explica|explicame|dime|que es|como funciona|cuales son|resume|resumeme|hazme un resumen)\b", n):
         return Intent("ai", True)
     if browser_action(text) is not None:
         return Intent("browser")
@@ -34,6 +34,6 @@ def classify(text):
 
 def information_title(prompt):
     n = prompt.strip()
-    n = re.sub(r"^(?:jarvis[, ]+)?(?:investiga|explica|explícame|qué es|que es|dime sobre|háblame de|hablame de)\\s+", "", n, flags=re.I)
-    n = re.sub(r"\\s+(?:y )?(?:muéstramelo|muestramelo|muéstrame|muestrame)(?: en el panel)?[.?!]*$", "", n, flags=re.I)
+    n = re.sub(r"^(?:jarvis[, ]+)?(?:investiga|explica|explícame|qué es|que es|dime sobre|háblame de|hablame de)\s+", "", n, flags=re.I)
+    n = re.sub(r"\s+(?:y )?(?:muéstramelo|muestramelo|muéstrame|muestrame)(?: en el panel)?[.?!]*$", "", n, flags=re.I)
     return (n[:90].strip(" ?.!") or "Resultado de JARVIS").capitalize()
