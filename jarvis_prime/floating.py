@@ -51,6 +51,7 @@ class Orb:
         self.panel = None
         self.drag_start = None
         self.dragged = False
+        self.single_click_job = None
         self.canvas.bind("<ButtonPress-1>", self.start_drag)
         self.canvas.bind("<B1-Motion>", self.drag)
         self.canvas.bind("<ButtonRelease-1>", self.end_drag)
@@ -81,10 +82,19 @@ class Orb:
 
     def end_drag(self, event):
         if self.drag_start is not None and not self.dragged:
-            self.toggle_panel()
+            if self.single_click_job is not None:
+                self.root.after_cancel(self.single_click_job)
+            self.single_click_job = self.root.after(250, self.single_click)
         self.drag_start = None
 
+    def single_click(self):
+        self.single_click_job = None
+        self.toggle_panel()
+
     def double_click(self, event):
+        if self.single_click_job is not None:
+            self.root.after_cancel(self.single_click_job)
+            self.single_click_job = None
         self.listen()
         return "break"
 
