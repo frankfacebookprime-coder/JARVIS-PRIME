@@ -6,11 +6,14 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from pathlib import Path
 
-from .core import init_db, respond
+from .core import init_db, respond, execute
 from .config import load_key, load_settings, save_key, save_settings
 from .network import fetch_models, complete, validate_url
 from .windows_apps import list_apps
 from .voice import speak, listen_once
+from .intent_router import information_title
+from .panel_renderer import render
+from .sound import play
 import math
 
 BG = "#080f1d"
@@ -40,7 +43,7 @@ class Desktop:
         load_legacy_env()
         init_db()
         self.root = window if window is not None else tk.Tk()
-        self.root.title("JARVIS PRIME | COMMAND CENTER v0.5")
+        self.root.title("JARVIS PRIME | COMMAND CENTER v0.6")
         self.root.geometry("1190x820")
         self.root.minsize(910, 660)
         self.root.configure(bg=BG)
@@ -72,7 +75,7 @@ class Desktop:
         side.pack_propagate(False)
         tk.Label(side, text="◈  JARVIS", bg="#0e1b2b", fg="#65eaff",
                  font=("Segoe UI", 22, "bold"), anchor="w").pack(fill="x", pady=(2, 2))
-        tk.Label(side, text="P R I M E   /   0.5", bg="#0e1b2b", fg="#7994ad",
+        tk.Label(side, text="P R I M E   /   0.6", bg="#0e1b2b", fg="#7994ad",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 35))
         def nav(title, call):
             b = tk.Button(side, text=title, anchor="w", command=call,
@@ -177,6 +180,31 @@ class Desktop:
         self.draw_hud()
         self.root.after(60, self.animate_hud)
 
+    def show_information(self, question, answer):
+        """Readable scrollable knowledge board; output is treated only as text."""
+        if getattr(self, "knowledge_window", None) is None or not self.knowledge_window.winfo_exists():
+            self.knowledge_window = tk.Toplevel(self.root)
+            self.knowledge_window.title("JARVIS PRIME | Knowledge Display")
+            self.knowledge_window.geometry("820x690")
+            self.knowledge_window.configure(bg="#0b1828")
+            container = tk.Frame(self.knowledge_window, bg="#0b1828")
+            container.pack(fill="both", expand=True)
+            canvas = tk.Canvas(container, bg="#0b1828", highlightthickness=0)
+            scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+            self.knowledge_content = tk.Frame(canvas, bg="#0b1828")
+            window_id = canvas.create_window((0, 0), window=self.knowledge_content, anchor="nw")
+            def resize(event):
+                canvas.itemconfigure(window_id, width=event.width)
+            canvas.bind("<Configure>", resize)
+            self.knowledge_content.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
+            canvas.configure(yscrollcommand=scrollbar.set)
+            scrollbar.pack(side="right", fill="y")
+            canvas.pack(side="left", fill="both", expand=True)
+        render(self.knowledge_content, information_title(question), answer)
+        self.knowledge_window.deiconify()
+        self.knowledge_window.lift()
+        play("panel")
+
     def show_apps(self):
         def done(value, error):
             self.add("APLICACIONES", "Error: " + error if error else
@@ -251,7 +279,17 @@ class Desktop:
                 self.worker(lambda: speak(str(answer)), lambda value, issue: self.add("VOZ", "Error de voz: " + issue) if issue else None)
             self.busy = False
             self.send_button.configure(state="normal", text="ENVIAR  ↗")
-        self.worker(lambda: respond(msg), done)
+        def job():
+            return execute(msg)
+        def routed(value, error):
+            if error:
+                done(None, error)
+                return
+            intent, answer = value
+            done(answer, None)
+            if intent.kind == "ai" and intent.visual:
+                self.show_information(msg, answer)
+        self.worker(job, routed)
 
     def settings_window(self):
         win = tk.Toplevel(self.root)
