@@ -1,4 +1,4 @@
-# JARVIS PRIME v0.3 — Windows, voz y HUD animado
+# JARVIS PRIME v0.4 — Command Center, navegador y voz
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
 
@@ -18,6 +18,17 @@ Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde
 
 **Nota:** el botón de detectar modelos requiere que el proveedor exponga `GET /models`. Si no existe, escribe manualmente el modelo. La prueba real utiliza `POST /chat/completions` y puede consumir créditos.
 
+### Navegador con lenguaje natural (nuevo v0.4)
+- `puedes abrir YouTube en Google` abre https://www.youtube.com/ en el navegador predeterminado.
+- `abre YouTube`, `abre Google`, `abre Gmail`, `abre GitHub`.
+- `busca gatos en Google` hace una búsqueda web.
+- La intención web se procesa **antes** de buscar una app instalada. La apertura se solicita al sistema operativo, pero debe verificarse visualmente en el equipo.
+
+### Nuevo panel
+- Barra lateral, accesos rápidos a YouTube, Google, Word y Chrome.
+- HUD circular animado, área central de conversación y estado de IA.
+- Botón HABLAR y casilla de voz (activada por defecto). Si falla audio, el chat de texto continúa funcionando.
+
 ### Windows: abrir aplicaciones con lenguaje natural
 Escribe `abre Word`, `abre Chrome`, `abre Excel`, `abre la calculadora` o `abre el bloc de notas`.
 JARVIS busca los accesos instalados del menú Inicio y las aplicaciones registradas en Windows (Get-StartApps).
@@ -27,10 +38,9 @@ El mensaje «Windows recibió la orden» significa que se inició el lanzamiento
 
 ### Voz española (opcional)
 Botón **HABLAR** para una frase por pulsación y casilla **Leer respuestas** para síntesis de voz.
-En la carpeta del proyecto, instala:
-`.venv\\Scripts\\python.exe -m pip install pyttsx3 SpeechRecognition pyaudio`
+Al ejecutar `install.ps1` se intenta instalar `pyttsx3`, `SpeechRecognition` y `PyAudio` automáticamente.\nLa salida de voz utiliza primero el sintetizador integrado de Windows (SAPI); se utiliza `pyttsx3` como alternativa.
 
-Nota: PyAudio puede necesitar instalarse por separado en ciertas versiones de Python. El reconocimiento por defecto usa Google Speech Recognition y envía audio al servicio externo: requiere Internet. No es una solución sin conexión ni escucha permanente; el sintetizador usa las voces instaladas en Windows, cuya calidad depende del equipo.
+Nota: PyAudio puede necesitar correcciones manuales en ciertas versiones de Python. El reconocimiento por defecto usa Google Speech Recognition y envía audio al servicio externo: requiere Internet. No es una solución sin conexión ni escucha permanente; el sintetizador usa las voces instaladas en Windows, cuya calidad depende del equipo.
 
 ### Funciones actuales
 - Interfaz oscura con **HUD circular animado**, chat y centro de configuración.
