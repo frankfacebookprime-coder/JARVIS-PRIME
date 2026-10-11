@@ -44,7 +44,7 @@ class Desktop:
         load_legacy_env()
         init_db()
         self.root = window if window is not None else tk.Tk()
-        self.root.title("JARVIS PRIME | COMMAND CENTER v1.0")
+        self.root.title("JARVIS PRIME | COMMAND CENTER v1.2")
         self.root.geometry("1190x820")
         self.root.minsize(910, 660)
         self.root.configure(bg=BG)
@@ -54,6 +54,7 @@ class Desktop:
         self.voice_enabled = tk.BooleanVar(value=True)
         self.hud_phase = 0
         self.settings = load_settings()
+        self.knowledge_timeout_job = None
         self.build()
         self.root.after(90, self.drain)
         self.root.after(60, self.animate_hud)
@@ -76,7 +77,7 @@ class Desktop:
         side.pack_propagate(False)
         tk.Label(side, text="◈  JARVIS", bg="#0e1b2b", fg="#65eaff",
                  font=("Segoe UI", 22, "bold"), anchor="w").pack(fill="x", pady=(2, 2))
-        tk.Label(side, text="P R I M E   /   1.0", bg="#0e1b2b", fg="#7994ad",
+        tk.Label(side, text="P R I M E   /   1.2", bg="#0e1b2b", fg="#7994ad",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 35))
         def nav(title, call):
             b = tk.Button(side, text=title, anchor="w", command=call,
@@ -90,6 +91,8 @@ class Desktop:
         nav("⚙   Configurar IA", self.settings_window)
         nav("◈   Escuchar ahora", self.listen_voice)
         nav("♫   Configurar voz", self.voice_settings_window)
+        nav("◈   Activación de voz", self.activation_settings_window)
+        nav("◉   Cerrar información", self.dismiss_information)
         nav("◉   Diagnóstico", lambda: self.quick_command("diagnostico completo"))
         nav("▤   Monitor PC", lambda: self.quick_command("monitor del sistema"))
         nav("◉   Capturar pantalla", self.capture_with_consent)
@@ -186,6 +189,26 @@ class Desktop:
         self.draw_hud()
         self.root.after(60, self.animate_hud)
 
+    def dismiss_information(self):
+        if self.knowledge_timeout_job is not None:
+            try:
+                self.root.after_cancel(self.knowledge_timeout_job)
+            except tk.TclError:
+                pass
+            self.knowledge_timeout_job = None
+        window = getattr(self, "knowledge_window", None)
+        if window is not None and window.winfo_exists() and window.state() != "withdrawn":
+            window.withdraw()
+            play("dismiss")
+
+    def schedule_knowledge_timeout(self):
+        if self.knowledge_timeout_job is not None:
+            self.root.after_cancel(self.knowledge_timeout_job)
+            self.knowledge_timeout_job = None
+        timeout = max(0, min(int(load_settings().get("info_panel_timeout", 0)), 3600))
+        if timeout:
+            self.knowledge_timeout_job = self.root.after(timeout * 1000, self.dismiss_information)
+
     def show_information(self, question, answer):
         """Readable scrollable knowledge board; output is treated only as text."""
         if getattr(self, "knowledge_window", None) is None or not self.knowledge_window.winfo_exists():
@@ -207,6 +230,7 @@ class Desktop:
             scrollbar.pack(side="right", fill="y")
             canvas.pack(side="left", fill="both", expand=True)
         render(self.knowledge_content, information_title(question), answer)
+        self.schedule_knowledge_timeout()
         self.knowledge_window.deiconify()
         self.knowledge_window.lift()
         play("panel")
@@ -275,6 +299,7 @@ class Desktop:
         if not msg or self.busy:
             return
         self.entry.delete(0, "end")
+        self.dismiss_information()
         self.add("TÚ", msg)
         self.busy = True
         self.send_button.configure(state="disabled", text="PENSANDO…")
@@ -311,6 +336,64 @@ class Desktop:
             return
         self.worker(lambda: capture_screen(confirmed=True),
                     lambda result, error: self.add("PANTALLA", "Error: " + error if error else result))
+
+    def activation_settings_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("JARVIS PRIME | ACTIVACIÓN")
+        win.geometry("610x600")
+        win.configure(bg=PANEL)
+        prefs = load_settings()
+        mode = tk.StringVar(value=prefs.get("activation_mode", "click"))
+        word = tk.StringVar(value=prefs.get("wake_word", "jarvis"))
+        path = tk.StringVar(value=prefs.get("vosk_model_path", ""))
+        timeout = tk.IntVar(value=int(prefs.get("info_panel_timeout", 0)))
+        sounds = tk.BooleanVar(value=bool(prefs.get("sounds", True)))
+        self.label(win, "◈  ACTIVACIÓN INTELIGENTE", 17, ACCENT, True).pack(anchor="w", padx=26, pady=(20,8))
+        self.label(win, "Elige cómo despertar JARVIS. Micrófono ambiental opcional.",
+                   10, MUTED).pack(anchor="w", padx=26, pady=(0,16))
+        self.label(win, "Modo", 10, ACCENT, True).pack(anchor="w", padx=26)
+        ttk.Combobox(win, textvariable=mode, state="readonly",
+                     values=["click", "wake", "clap", "both"]).pack(fill="x", padx=26, pady=(4,13))
+        self.label(win, "Palabra clave (ejemplo: jarvis)", 10, ACCENT, True).pack(anchor="w", padx=26)
+        tk.Entry(win, textvariable=word, bg=PANEL2, fg=FG,
+                 insertbackground=FG).pack(fill="x", padx=26, pady=(4,13), ipady=5)
+        self.label(win, "Carpeta de modelo Vosk español (para wake / both)",
+                   10, ACCENT, True).pack(anchor="w", padx=26)
+        tk.Entry(win, textvariable=path, bg=PANEL2, fg=FG,
+                 insertbackground=FG).pack(fill="x", padx=26, pady=(4,13), ipady=5)
+        self.label(win, "Panel informativo: cerrar después de segundos (0 = mantener)",
+                   10, ACCENT, True).pack(anchor="w", padx=26)
+        tk.Scale(win, from_=0, to=120, resolution=5, variable=timeout, orient="horizontal",
+                 bg=PANEL, fg=FG, highlightthickness=0).pack(fill="x", padx=26)
+        tk.Checkbutton(win, text="  Efectos futuristas", variable=sounds,
+                       bg=PANEL, fg=FG, selectcolor=PANEL2,
+                       activebackground=PANEL, activeforeground=FG).pack(anchor="w", padx=26, pady=12)
+        note = ("CLICK: solo clic.  WAKE: palabra clave.  CLAP: dos aplausos.  BOTH: ambos.\\n"
+                "El detector de palabra usa Vosk local. El audio ambiental no se guarda.\\n"
+                "En cualquier modo, un clic sigue activando JARVIS.")
+        self.label(win, note, 9, MUTED, wraplength=550, justify="left").pack(anchor="w", padx=26)
+        def save_activation():
+            from .ambient_activation import MODES, clean_phrase
+            from pathlib import Path
+            selected = mode.get()
+            wake = clean_phrase(word.get())
+            if selected not in MODES or not wake or len(wake) > 35:
+                messagebox.showerror("Activación", "Modo o palabra clave incorrectos.", parent=win)
+                return
+            if selected in ("wake", "both") and not Path(path.get()).expanduser().is_dir():
+                messagebox.showerror("Activación",
+                    "Selecciona una carpeta real de modelo Vosk español antes de activar la palabra clave.",
+                    parent=win)
+                return
+            updated = load_settings()
+            updated.update(activation_mode=selected, wake_word=wake,
+                           vosk_model_path=path.get().strip(), info_panel_timeout=timeout.get(),
+                           sounds=sounds.get())
+            save_settings(updated)
+            self.schedule_knowledge_timeout() if getattr(self, "knowledge_window", None) else None
+            win.destroy()
+            self.add("SISTEMA", "Modo de activación guardado: " + selected)
+        self.button(win, "APLICAR ACTIVACIÓN", save_activation).pack(fill="x", padx=26, pady=(13,0))
 
     def voice_settings_window(self):
         win = tk.Toplevel(self.root)
