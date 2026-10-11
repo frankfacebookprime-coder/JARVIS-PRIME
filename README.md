@@ -1,6 +1,16 @@
-# JARVIS PRIME v1.0 — Arquitectura modular futurista para Windows
+# JARVIS PRIME v1.1 — Tareas encadenadas y captura autorizada
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
+
+## Novedades v1.1
+
+- **Tareas locales de dos pasos**: «abre Word y luego abre Chrome», o «abre Word después abre Chrome». Solo se admiten pasos de los tipos ya autorizados (aplicaciones, navegador, ventanas, consulta local y panel). El segundo paso se cancela cuando el primero comunica un error. *No es un agente autónomo general; abrir una app no demuestra que haya aparecido visualmente.*
+- **Captura con consentimiento real**: «mira mi pantalla» y botón «Capturar pantalla» solicitan autorización explícita por cada captura. La imagen se guarda en `%USERPROFILE%\\.jarvis-prime\\captures`, solo en el equipo. **No se analiza ni se envía automáticamente a la nube**.
+- **Esfera conectada a la captura**: las solicitudes por voz abren el panel y muestran la misma confirmación.
+- **Fin de frase ajustable**: el reconocimiento usa umbral de pausa configurable (0,5–2,5 s), escucha hasta 25 s por frase y permite ajustar la pausa desde «Configurar voz». Sigue utilizando Google Speech Recognition por Internet para transcribir, no VAD completamente offline.
+- **Pruebas**: casos para secuencias válidas, bloqueo de secuencias sensibles, interrupción por errores y consentimiento de captura.
+
+Estas funciones conservan la prohibición de ejecutar código libre devuelto por modelos de lenguaje. El botón de parada bloquea nuevas acciones locales del motor; no deshace una acción ya enviada al sistema operativo. Para probar voz, ventanas y pantalla es necesario ejecutar JARVIS en un equipo Windows real.
 
 ## Versión 1.0 — Nuevas funciones integradas
 
