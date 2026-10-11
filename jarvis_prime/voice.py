@@ -87,10 +87,16 @@ def listen_once(seconds=6):
     except ImportError as exc:
         raise RuntimeError("Falta SpeechRecognition. Ejecuta install.ps1.") from exc
     recognizer = sr.Recognizer()
+    options = load_settings()
+    recognizer.dynamic_energy_threshold = True
+    recognizer.pause_threshold = max(0.5, min(float(options.get("pause_threshold", 1.0)), 2.5))
+    recognizer.non_speaking_duration = min(0.5, recognizer.pause_threshold / 2)
+    timeout = max(3, min(int(options.get("listen_timeout", seconds)), 25))
+    phrase_limit = max(5, min(int(options.get("phrase_time_limit", 25)), 60))
     try:
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=0.6)
-            audio = recognizer.listen(source, timeout=seconds, phrase_time_limit=15)
+            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_limit)
         return recognizer.recognize_google(audio, language="es-GT")
     except sr.WaitTimeoutError:
         return ""
