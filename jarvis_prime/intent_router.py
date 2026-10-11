@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from .windows_apps import extract_open, normalize
 from .browser import browser_action
 from .window_control import window_request
+from .pc_tools import parse as parse_shortcut
+from .second_brain import request as brain_request
+from .guardian import is_sensitive
 
 @dataclass(frozen=True)
 class Intent:
@@ -14,6 +17,18 @@ def classify(text):
     n = normalize(text)
     if not n:
         return Intent("empty")
+    if n in ("deten jarvis", "detener jarvis", "parada de emergencia", "reanuda jarvis", "reanudar jarvis"):
+        return Intent("guardian")
+    if is_sensitive(n):
+        return Intent("blocked")
+    if n in ("diagnostico completo", "revisa el sistema", "monitor del sistema", "estado de recursos", "lista habilidades"):
+        return Intent("health")
+    if brain_request(text):
+        return Intent("memory")
+    if parse_shortcut(text):
+        return Intent("shortcut")
+    if n in ("captura mi pantalla", "toma captura de pantalla", "mira mi pantalla"):
+        return Intent("vision")
     if n in {"abre el panel", "abre panel", "jarvis abre el panel", "muestra el panel",
              "jarvis muestra el panel", "open panel", "abrir panel", "abrir el panel"}:
         return Intent("panel")
