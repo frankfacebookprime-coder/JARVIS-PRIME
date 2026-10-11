@@ -6,6 +6,7 @@ from unittest.mock import patch
 from jarvis_prime.core import remember, recall, local_action, chat, resolve_local_command, respond
 from jarvis_prime.windows_apps import extract_open, match_app, normalize
 from jarvis_prime.network import validate_url
+from jarvis_prime.browser import browser_action, open_browser
 from jarvis_prime.config import save_settings, load_settings
 
 class CoreTests(unittest.TestCase):
@@ -58,6 +59,24 @@ class CoreTests(unittest.TestCase):
     def test_unrecognized_not_executed(self):
         with patch("jarvis_prime.windows_apps.sys.platform", "win32"), patch("jarvis_prime.windows_apps.discover_shortcuts", return_value={}):
             self.assertIn("No encontré", local_action("abre una app desconocida"))
+
+    def test_browser_natural_language(self):
+        for phrase in ["puedes abrir YouTube en Google", "abre youtube",
+                       "Jarvis abre youtube en chrome", "abre la pagina de youtube"]:
+            with self.subTest(phrase=phrase):
+                action = browser_action(phrase)
+                self.assertIsNotNone(action)
+                self.assertEqual(action[1], "https://www.youtube.com/")
+        self.assertTrue(browser_action("busca gatos en google")[1].startswith("https://www.google.com/search?q="))
+        self.assertIsNone(browser_action("dime la historia de YouTube"))
+        self.assertIsNone(browser_action("elimina mis archivos"))
+
+    def test_browser_is_not_sent_to_ai(self):
+        with patch("jarvis_prime.core.chat") as ai, patch("jarvis_prime.browser.webbrowser.open", return_value=True) as opener:
+            value = respond("puedes abrir YouTube en Google")
+            self.assertIn("YouTube".lower(), value.lower())
+            ai.assert_not_called()
+            opener.assert_called_once_with("https://www.youtube.com/", new=2)
 
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
