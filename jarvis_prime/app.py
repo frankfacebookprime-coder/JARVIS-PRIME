@@ -40,14 +40,14 @@ class Desktop:
         load_legacy_env()
         init_db()
         self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | Control Center v0.3")
-        self.root.geometry("1160x760")
-        self.root.minsize(740, 530)
+        self.root.title("JARVIS PRIME | COMMAND CENTER v0.4")
+        self.root.geometry("1190x820")
+        self.root.minsize(910, 660)
         self.root.configure(bg=BG)
         self.results = queue.Queue()
         self.busy = False
         self.models = []
-        self.voice_enabled = tk.BooleanVar(value=False)
+        self.voice_enabled = tk.BooleanVar(value=True)
         self.hud_phase = 0
         self.settings = load_settings()
         self.build()
@@ -64,32 +64,84 @@ class Desktop:
                          font=("Segoe UI", 10, "bold"), padx=15, pady=8, cursor="hand2")
 
     def build(self):
-        top = tk.Frame(self.root, bg=PANEL, padx=22, pady=18)
-        top.pack(fill="x")
-        tk.Label(top, text="◉  JARVIS PRIME", bg=PANEL, fg=ACCENT,
-                 font=("Segoe UI", 23, "bold")).pack(side="left")
-        self.button(top, "⚙  CONFIGURAR IA", self.settings_window).pack(side="right")
-        self.label(self.root, "CENTRO DE CONTROL  /  ACCIONES WINDOWS  /  VOZ  /  INTELIGENCIA", 10, MUTED).pack(anchor="w", padx=25, pady=(14, 8))
-        self.hud = tk.Canvas(self.root, bg=BG, height=140, highlightthickness=0)
-        self.hud.pack(fill="x", padx=25)
-        self.hud.bind("<Configure>", lambda event: self.draw_hud())
-        statusbar = tk.Frame(self.root, bg=BG)
-        statusbar.pack(fill="x", padx=24)
-        self.status = self.label(statusbar, "", 10, ACCENT)
+        self.root.configure(bg=BG)
+        shell = tk.Frame(self.root, bg=BG)
+        shell.pack(fill="both", expand=True)
+        side = tk.Frame(shell, bg="#0e1b2b", width=220, padx=16, pady=24)
+        side.pack(side="left", fill="y")
+        side.pack_propagate(False)
+        tk.Label(side, text="◈  JARVIS", bg="#0e1b2b", fg="#65eaff",
+                 font=("Segoe UI", 22, "bold"), anchor="w").pack(fill="x", pady=(2, 2))
+        tk.Label(side, text="P R I M E   /   0.4", bg="#0e1b2b", fg="#7994ad",
+                 font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 35))
+        def nav(title, call):
+            b = tk.Button(side, text=title, anchor="w", command=call,
+                          bg="#15293d", fg="#d5ebf7", activebackground="#1d4861",
+                          activeforeground="white", relief="flat", bd=0, padx=13, pady=13,
+                          cursor="hand2", font=("Segoe UI", 10))
+            b.pack(fill="x", pady=5)
+        nav("◉   Centro de control", lambda: self.entry.focus_set())
+        nav("▤   Aplicaciones", self.show_apps)
+        nav("◎   Nuevo chat", self.clear_chat)
+        nav("⚙   Configurar IA", self.settings_window)
+        nav("◈   Escuchar ahora", self.listen_voice)
+        tk.Frame(side, bg="#26425a", height=1).pack(fill="x", pady=(26, 16))
+        tk.Label(side, text="ACCESOS RÁPIDOS", bg="#0e1b2b", fg="#7994ad",
+                 font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
+        for title, command in [("▶  YouTube", "abre youtube en google"),
+                               ("◉  Google", "abre google"),
+                               ("▣  Word", "abre word"),
+                               ("◎  Chrome", "abre chrome")]:
+            nav(title, lambda phrase=command: self.quick_command(phrase))
+        tk.Label(side, text="Acciones locales verificables\nSin ejecutar código de la IA",
+                 bg="#0e1b2b", fg="#718fa5", justify="left",
+                 font=("Segoe UI", 9)).pack(side="bottom", anchor="w", pady=9)
+
+        main = tk.Frame(shell, bg=BG)
+        main.pack(side="left", fill="both", expand=True)
+        header = tk.Frame(main, bg=BG, padx=28, pady=18)
+        header.pack(fill="x")
+        tk.Label(header, text="CENTRO DE COMANDO", bg=BG, fg=FG,
+                 font=("Segoe UI", 21, "bold")).pack(anchor="w", side="left")
+        self.button(header, "CONFIGURAR IA  ⚙", self.settings_window, "#41cee9").pack(side="right")
+        separator = tk.Frame(main, bg="#263d53", height=1)
+        separator.pack(fill="x", padx=28)
+        statusrow = tk.Frame(main, bg=BG, padx=28, pady=12)
+        statusrow.pack(fill="x")
+        self.status = self.label(statusrow, "", 10, ACCENT)
         self.status.pack(side="left")
         self.update_status()
-        self.button(statusbar, "NUEVO CHAT", self.clear_chat, PANEL2).pack(side="right")
-        self.button(statusbar, "APLICACIONES", self.show_apps, PANEL2).pack(side="right", padx=8)
-        self.button(statusbar, "🎙  HABLAR", self.listen_voice, PANEL2).pack(side="right", padx=8)
-        tk.Checkbutton(statusbar, text="Leer respuestas", variable=self.voice_enabled,
-                       bg=BG, fg=MUTED, selectcolor=PANEL2, activebackground=BG).pack(side="right", padx=8)
-        self.output = tk.Text(self.root, bg=PANEL, fg=FG, insertbackground=FG,
-                              font=("Segoe UI", 12), wrap="word", relief="flat",
-                              padx=24, pady=20, state="disabled", spacing3=8)
-        self.output.pack(fill="both", expand=True, padx=24, pady=16)
-        self.add("SISTEMA", "JARVIS PRIME 0.3 preparado. Prueba: abre Word · abre Chrome · abre calculadora · qué aplicaciones tengo.\\nUsa HABLAR para dictar una orden (requiere activar las dependencias de voz).")
-        bottom = tk.Frame(self.root, bg=BG)
-        bottom.pack(fill="x", padx=24, pady=(0, 24))
+        self.label(statusrow, "WINDOWS  •  VOZ  •  NAVEGADOR", 9, MUTED).pack(side="right")
+
+        hero = tk.Frame(main, bg=PANEL, padx=18, pady=8)
+        hero.pack(fill="x", padx=26, pady=(0, 12))
+        leftinfo = tk.Frame(hero, bg=PANEL)
+        leftinfo.pack(side="left", fill="both", expand=True)
+        tk.Label(leftinfo, text="JARVIS ESTÁ LISTO", bg=PANEL, fg=ACCENT,
+                 font=("Segoe UI", 14, "bold"), anchor="w").pack(fill="x", pady=(23, 8))
+        tk.Label(leftinfo, text="Habla en español, abre páginas o\naplicaciones y consulta tu equipo.",
+                 bg=PANEL, fg=MUTED, font=("Segoe UI", 10), justify="left",
+                 anchor="w").pack(fill="x")
+        self.hud = tk.Canvas(hero, bg=PANEL, height=158, width=250, highlightthickness=0)
+        self.hud.pack(side="right", padx=16)
+        self.hud.bind("<Configure>", lambda event: self.draw_hud())
+
+        controls = tk.Frame(main, bg=BG, padx=26)
+        controls.pack(fill="x", pady=(0, 9))
+        self.button(controls, "🎙  HABLAR AHORA", self.listen_voice, "#54dbe9").pack(side="left")
+        tk.Checkbutton(controls, text="  Respuestas con voz", variable=self.voice_enabled,
+                       bg=BG, fg=FG, selectcolor=PANEL2, activebackground=BG,
+                       activeforeground=FG, font=("Segoe UI", 10)).pack(side="left", padx=15)
+        self.voice_status = self.label(controls, "MICRÓFONO EN ESPERA", 9, MUTED)
+        self.voice_status.pack(side="right")
+
+        self.output = tk.Text(main, bg="#0e1c2d", fg=FG, insertbackground=FG,
+                              font=("Segoe UI", 11), wrap="word", relief="flat",
+                              padx=22, pady=15, state="disabled", spacing3=5)
+        self.output.pack(fill="both", expand=True, padx=26, pady=(0, 12))
+        self.add("SISTEMA", "Bienvenido a JARVIS PRIME. Prueba: puedes abrir YouTube en Google · abre Word · busca gatos en Google.")
+        bottom = tk.Frame(main, bg=BG)
+        bottom.pack(fill="x", padx=26, pady=(0, 22))
         self.entry = tk.Entry(bottom, bg=PANEL2, fg=FG, insertbackground=FG,
                               relief="flat", font=("Segoe UI", 12))
         self.entry.pack(side="left", fill="x", expand=True, ipady=14)
@@ -97,6 +149,13 @@ class Desktop:
         self.send_button = self.button(bottom, "ENVIAR  ↗", self.send)
         self.send_button.pack(side="right", padx=(9, 0), fill="y")
         self.entry.focus_set()
+
+    def quick_command(self, command):
+        if self.busy:
+            return
+        self.entry.delete(0, "end")
+        self.entry.insert(0, command)
+        self.send()
 
     def draw_hud(self):
         self.hud.delete("all")
@@ -126,8 +185,10 @@ class Desktop:
         self.worker(list_apps, done)
 
     def listen_voice(self):
+        self.voice_status.configure(text="● ESCUCHANDO...", fg=ACCENT)
         self.add("VOZ", "Escuchando una frase en español…")
         def done(value, error):
+            self.voice_status.configure(text="MICRÓFONO EN ESPERA", fg=MUTED)
             if error:
                 self.add("VOZ", "No pude escuchar: " + error)
             elif value:
