@@ -65,12 +65,14 @@ class AmbientActivation:
         self.on_status = on_status or (lambda message: None)
         self.stop_event = threading.Event()
         self.thread = None
+        self.retry_after = 0.0
 
     def start(self, mode, word="jarvis", model_path=""):
         self.stop()
         if mode not in MODES or mode == "click":
             return
         self.stop_event = threading.Event()
+        self.retry_after = 0.0
         self.thread = threading.Thread(target=self._run,
             args=(mode, word, model_path, self.stop_event), daemon=True)
         self.thread.start()
@@ -126,4 +128,5 @@ class AmbientActivation:
                 self.on_trigger(triggered)
         except Exception as exc:
             if not stop.is_set():
+                self.retry_after = time.monotonic() + 20
                 self.on_status("Activación ambiental no disponible: " + str(exc)[:180])
