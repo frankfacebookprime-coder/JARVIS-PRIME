@@ -154,7 +154,7 @@ class Orb:
             self.ambient.stop()
             self.ambient_signature = signature
         if self.mode == "ready" and signature[0] != "click":
-            if self.ambient.thread is None or not self.ambient.thread.is_alive():
+            if time.monotonic() >= self.ambient.retry_after and (self.ambient.thread is None or not self.ambient.thread.is_alive()):
                 self.ambient.start(*signature)
         if self.root.winfo_exists():
             self.root.after(1800, self.refresh_activation)
