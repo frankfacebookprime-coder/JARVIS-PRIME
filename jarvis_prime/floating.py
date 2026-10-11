@@ -12,6 +12,7 @@ from .app import Desktop
 from .core import init_db, execute
 from .voice import listen_once, speak
 from .sound import play
+from .ambient_activation import AmbientActivation
 
 SIZE = 208
 KEY = "#fc00fc"
@@ -34,7 +35,7 @@ class Orb:
     def __init__(self):
         init_db()
         self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | Orb v1.0")
+        self.root.title("JARVIS PRIME | Orb v1.2")
         self.root.geometry(f"{SIZE}x{SIZE}+40+220")
         self.root.overrideredirect(True)
         self.root.configure(bg=KEY)
@@ -51,6 +52,11 @@ class Orb:
         self.mode = "ready"
         self.messages = queue.Queue()
         self.panel = None
+        self.ambient = AmbientActivation(
+            lambda trigger: self.messages.put(("ambient_trigger", trigger)),
+            lambda status: self.messages.put(("ambient_status", status)))
+        self.ambient_signature = None
+        self.root.after(1500, self.refresh_activation)
         self.drag_start = None
         self.suppress_click_until = 0.0
         self.dragged = False
@@ -63,6 +69,7 @@ class Orb:
         self.menu = tk.Menu(self.root, tearoff=0, bg="#11273b", fg="#e6fbff")
         self.menu.add_command(label="Abrir panel", command=self.show_panel)
         self.menu.add_command(label="Hablar con JARVIS", command=self.listen)
+        self.menu.add_command(label="Configurar activación", command=self.open_activation_settings)
         self.menu.add_command(label="Ocultar panel", command=self.hide_panel)
         self.menu.add_separator()
         self.menu.add_command(label="Diagnóstico", command=lambda: self.panel_action("diagnostico completo"))
@@ -132,12 +139,33 @@ class Orb:
         else:
             self.show_panel()
 
+    def open_activation_settings(self):
+        self.show_panel()
+        self.panel.activation_settings_window()
+
+    def refresh_activation(self):
+        """Apply saved preferences while JARVIS is running."""
+        from .config import load_settings
+        preferences = load_settings()
+        signature = (preferences.get("activation_mode", "click"),
+                     preferences.get("wake_word", "jarvis"),
+                     preferences.get("vosk_model_path", ""))
+        if signature != self.ambient_signature:
+            self.ambient.stop()
+            self.ambient_signature = signature
+        if self.mode == "ready" and signature[0] != "click":
+            if self.ambient.thread is None or not self.ambient.thread.is_alive():
+                self.ambient.start(*signature)
+        if self.root.winfo_exists():
+            self.root.after(1800, self.refresh_activation)
+
     def listen(self):
         if self.mode != "ready":
             return
+        self.ambient.stop()
         self.mode = "listening"
         play("listen")
-        self.run_worker(self.recognize_and_respond)
+        self.root.after(320, lambda: self.run_worker(self.recognize_and_respond))
 
     def recognize_and_respond(self):
         try:
@@ -149,6 +177,10 @@ class Orb:
             intent, answer = execute(phrase)
             if intent.kind == "panel":
                 self.messages.put(("panel", None))
+            elif intent.kind == "dismiss_info":
+                self.messages.put(("dismiss_info", None))
+            elif intent.kind == "hide_panel":
+                self.messages.put(("hide_panel", None))
             elif intent.kind == "vision":
                 self.messages.put(("vision", None))
             elif intent.kind == "ai" and intent.visual:
@@ -170,7 +202,19 @@ class Orb:
         try:
             while True:
                 kind, value = self.messages.get_nowait()
-                if kind == "panel":
+                if kind == "ambient_trigger":
+                    if self.mode == "ready":
+                        play(value)
+                        self.listen()
+                elif kind == "ambient_status":
+                    if self.panel is not None and self.panel.root.winfo_exists():
+                        self.panel.add("ACTIVACIÓN", value)
+                elif kind == "dismiss_info":
+                    if self.panel is not None and self.panel.root.winfo_exists():
+                        self.panel.dismiss_information()
+                elif kind == "hide_panel":
+                    self.hide_panel()
+                elif kind == "panel":
                     self.show_panel()
                 elif kind == "vision":
                     self.show_panel()
@@ -181,6 +225,8 @@ class Orb:
                     self.panel.show_information(question, answer)
                 elif kind == "heard":
                     self.mode = "working"
+                    if self.panel is not None and self.panel.root.winfo_exists():
+                        self.panel.dismiss_information()
                     if self.panel is not None and self.panel.root.winfo_exists():
                         self.panel.add("TÚ (VOZ)", value)
                 elif kind == "answered":
@@ -257,6 +303,7 @@ class Orb:
         self.panel.quick_command(command)
 
     def close(self):
+        self.ambient.stop()
         self.root.destroy()
 
 def main():
