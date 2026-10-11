@@ -7,6 +7,7 @@ from .window_control import window_request
 from .pc_tools import parse as parse_shortcut
 from .second_brain import request as brain_request
 from .guardian import is_sensitive
+from .agent_planner import plan, allowed
 
 @dataclass(frozen=True)
 class Intent:
@@ -19,6 +20,9 @@ def classify(text):
         return Intent("empty")
     if n in ("deten jarvis", "detener jarvis", "parada de emergencia", "reanuda jarvis", "reanudar jarvis"):
         return Intent("guardian")
+    steps = plan(text)
+    if steps:
+        return Intent("sequence") if allowed(steps) else Intent("blocked")
     if is_sensitive(n):
         return Intent("blocked")
     if n in ("diagnostico completo", "revisa el sistema", "monitor del sistema", "estado de recursos", "lista habilidades"):
