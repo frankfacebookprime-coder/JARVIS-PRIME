@@ -43,7 +43,7 @@ class Desktop:
         load_legacy_env()
         init_db()
         self.root = window if window is not None else tk.Tk()
-        self.root.title("JARVIS PRIME | COMMAND CENTER v0.6")
+        self.root.title("JARVIS PRIME | COMMAND CENTER v1.0")
         self.root.geometry("1190x820")
         self.root.minsize(910, 660)
         self.root.configure(bg=BG)
@@ -75,7 +75,7 @@ class Desktop:
         side.pack_propagate(False)
         tk.Label(side, text="◈  JARVIS", bg="#0e1b2b", fg="#65eaff",
                  font=("Segoe UI", 22, "bold"), anchor="w").pack(fill="x", pady=(2, 2))
-        tk.Label(side, text="P R I M E   /   0.6", bg="#0e1b2b", fg="#7994ad",
+        tk.Label(side, text="P R I M E   /   1.0", bg="#0e1b2b", fg="#7994ad",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 35))
         def nav(title, call):
             b = tk.Button(side, text=title, anchor="w", command=call,
@@ -88,6 +88,10 @@ class Desktop:
         nav("◎   Nuevo chat", self.clear_chat)
         nav("⚙   Configurar IA", self.settings_window)
         nav("◈   Escuchar ahora", self.listen_voice)
+        nav("♫   Configurar voz", self.voice_settings_window)
+        nav("◉   Diagnóstico", lambda: self.quick_command("diagnostico completo"))
+        nav("▤   Monitor PC", lambda: self.quick_command("monitor del sistema"))
+        nav("■   Parar acciones", lambda: self.quick_command("deten jarvis"))
         tk.Frame(side, bg="#26425a", height=1).pack(fill="x", pady=(26, 16))
         tk.Label(side, text="ACCESOS RÁPIDOS", bg="#0e1b2b", fg="#7994ad",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
@@ -291,6 +295,34 @@ class Desktop:
                 self.show_information(msg, answer)
         self.worker(job, routed)
 
+    def voice_settings_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("JARVIS PRIME | Motor de voz")
+        win.geometry("520x440")
+        win.configure(bg=PANEL)
+        saved = load_settings()
+        engine = tk.StringVar(value=saved.get("tts_engine", "auto"))
+        voice_id = tk.StringVar(value=saved.get("tts_voice", "es-MX-DaliaNeural"))
+        rate = tk.IntVar(value=int(saved.get("tts_rate", 0)))
+        maximum = tk.IntVar(value=int(saved.get("voice_max_chars", 750)))
+        self.label(win, "MOTOR DE VOZ", 16, ACCENT, True).pack(anchor="w", padx=25, pady=15)
+        self.label(win, "Motor", 10, MUTED).pack(anchor="w", padx=25)
+        ttk.Combobox(win, textvariable=engine, state="readonly", values=["auto","edge","piper","sapi"]).pack(fill="x", padx=25)
+        self.label(win, "Voz Edge TTS", 10, MUTED).pack(anchor="w", padx=25, pady=(12,0))
+        ttk.Combobox(win, textvariable=voice_id, values=["es-MX-DaliaNeural","es-MX-JorgeNeural","es-ES-ElviraNeural","es-ES-AlvaroNeural"]).pack(fill="x", padx=25)
+        self.label(win, "Velocidad (-50 a +50%)", 10, MUTED).pack(anchor="w", padx=25, pady=(12,0))
+        tk.Scale(win, from_=-50, to=50, variable=rate, orient="horizontal", bg=PANEL, fg=FG, highlightthickness=0).pack(fill="x", padx=25)
+        self.label(win, "Máximo de caracteres hablados", 10, MUTED).pack(anchor="w", padx=25, pady=(12,0))
+        tk.Scale(win, from_=100, to=1400, resolution=50, variable=maximum, orient="horizontal", bg=PANEL, fg=FG, highlightthickness=0).pack(fill="x", padx=25)
+        def save_voice():
+            values = load_settings()
+            values.update(tts_engine=engine.get(), tts_voice=voice_id.get().strip(),
+                          tts_rate=rate.get(), voice_max_chars=maximum.get())
+            save_settings(values)
+            win.destroy()
+            self.add("SISTEMA", "Preferencias de voz guardadas.")
+        self.button(win, "GUARDAR VOZ", save_voice).pack(padx=25, pady=15, fill="x")
+
     def settings_window(self):
         win = tk.Toplevel(self.root)
         win.title("JARVIS PRIME | Conectar IA")
@@ -377,7 +409,7 @@ class Desktop:
                     save_key(key.get().strip())
                 if not load_key():
                     raise ValueError("Introduce tu API Key.")
-                save_settings({"provider": provider.get(), "base_url": endpoint, "model": chosen})
+                save_settings({**load_settings(), "provider": provider.get(), "base_url": endpoint, "model": chosen})
             except Exception as exc:
                 messagebox.showerror("Configuración", str(exc), parent=win)
                 return
