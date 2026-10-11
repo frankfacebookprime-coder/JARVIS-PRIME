@@ -101,6 +101,7 @@ class AmbientActivation:
                     chunks.put_nowait(bytes(indata))
                 except queue.Full:
                     pass
+            triggered = None
             with sd.RawInputStream(samplerate=SAMPLE_RATE, channels=1,
                                    dtype="int16", blocksize=1024, callback=callback):
                 self.on_status("Detección ambiental activa (" + mode + ")")
@@ -114,13 +115,15 @@ class AmbientActivation:
                     rms = float(np.sqrt(np.mean(data*data)))
                     peak = float(np.max(np.abs(data)))
                     if mode in ("clap", "both") and detector.feed(rms, peak, time.monotonic()):
-                        self.on_trigger("clap")
+                        triggered = "clap"
                         break
                     if recognize and recognize.AcceptWaveform(raw):
                         transcript = json.loads(recognize.Result()).get("text", "")
                         if wake_detected(transcript, word):
-                            self.on_trigger("wake")
+                            triggered = "wake"
                             break
+            if triggered and not stop.is_set():
+                self.on_trigger(triggered)
         except Exception as exc:
             if not stop.is_set():
                 self.on_status("Activación ambiental no disponible: " + str(exc)[:180])
