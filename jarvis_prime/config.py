@@ -5,7 +5,7 @@ from pathlib import Path
 
 FOLDER = Path.home() / ".jarvis-prime"
 SETTINGS = FOLDER / "settings.json"
-DEFAULTS = {"provider": "OpenRouter", "base_url": "https://openrouter.ai/api/v1", "model": "", "timeout": 45}
+DEFAULTS = {"provider": "OpenRouter", "base_url": "https://openrouter.ai/api/v1", "model": "", "timeout": 45, "tts_engine": "auto", "tts_voice": "es-MX-DaliaNeural", "tts_rate": 0, "tts_volume": 100, "sounds": True, "voice_max_chars": 750}
 
 def load_settings():
     data = DEFAULTS.copy()
