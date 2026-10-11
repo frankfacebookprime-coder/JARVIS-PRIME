@@ -10,6 +10,7 @@ from pathlib import Path
 from .config import load_key, load_settings
 from .network import complete
 from .windows_apps import extract_open, launch_app, list_apps
+from .diagnostics import system_summary, running_processes
 
 DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
@@ -94,5 +95,10 @@ def respond(text):
         return remember(value[9:].strip())
     if value.lower() in ("qué recuerdas", "que recuerdas", "ver memoria"):
         return "\n".join("• " + item for item in recall()) or "Aún no tengo notas."
+    command = normalize_command(value)
+    if command in ("estado de mi computadora", "estado del sistema", "informacion de mi pc", "diagnostico basico"):
+        return system_summary()
+    if command in ("ver procesos", "que procesos estan abiertos", "mostrar procesos"):
+        return running_processes()
     action = local_action(value)
     return action if action is not None else chat(value)
