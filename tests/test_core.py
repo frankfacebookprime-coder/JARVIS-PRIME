@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from jarvis_prime.core import remember, recall, local_action, chat
+from jarvis_prime.core import remember, recall, local_action, chat, resolve_local_command, respond
 from jarvis_prime.network import validate_url
 from jarvis_prime.config import save_settings, load_settings
 
@@ -15,8 +15,26 @@ class CoreTests(unittest.TestCase):
             remember("dos", path)
             self.assertEqual(recall(path), ["dos", "uno"])
 
-    def test_unknown_command(self):
-        self.assertIsNone(local_action("comando no autorizado"))
+    def test_command_variants(self):
+        for phrase in ["abre la calculadora", "abre calculadora", "abrir calculadora",
+                       "JARVIS, abre la calculadora por favor", "¿Puedes abrir la calculadora?",
+                       "inicia la calculadora"]:
+            with self.subTest(phrase=phrase):
+                self.assertEqual(resolve_local_command(phrase), "calc.exe")
+        self.assertEqual(resolve_local_command("abre el bloc de notas"), "notepad.exe")
+
+    def test_unsafe_or_unknown_commands_do_not_execute(self):
+        for phrase in ["abre powershell", "elimina los archivos", "abre la calculadora y borra todo",
+                       "explica como abrir la calculadora", "comando no autorizado"]:
+            with self.subTest(phrase=phrase):
+                self.assertIsNone(resolve_local_command(phrase))
+
+    def test_local_command_runs_before_model(self):
+        with patch("jarvis_prime.core.sys.platform", "win32"), patch("jarvis_prime.core.subprocess.Popen") as popen, patch("jarvis_prime.core.chat") as remote:
+            result = respond("abre la calculadora")
+            self.assertIn("calculadora", result)
+            popen.assert_called_once_with(["calc.exe"], shell=False)
+            remote.assert_not_called()
 
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
