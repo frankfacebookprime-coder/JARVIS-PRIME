@@ -2,12 +2,44 @@
 import subprocess
 import sys
 from .neural_voice import speak_neural
+from .config import load_settings
+
+def _speak_edge(text, options):
+    """Optional cloud-connected Edge speech synthesis without a local heavyweight model."""
+    import asyncio
+    import tempfile
+    from pathlib import Path
+    import edge_tts
+    from playsound3 import playsound
+    voice = options.get("tts_voice") or "es-MX-DaliaNeural"
+    # Whitelist locale/voice-id shape to avoid arbitrary parameters.
+    import re
+    if not re.fullmatch(r"[a-z]{2}-[A-Z]{2}-[A-Za-z]+Neural", voice):
+        voice = "es-MX-DaliaNeural"
+    with tempfile.TemporaryDirectory(prefix="jarvis-edge-") as temp:
+        target = str(Path(temp) / "spoken.mp3")
+        rate = max(-50, min(50, int(options.get("tts_rate", 0))))
+        async def write():
+            speech = edge_tts.Communicate(text, voice=voice, rate=f"{rate:+d}%")
+            await speech.save(target)
+        asyncio.run(write())
+        playsound(target)
+    return True
 
 def speak(text):
     if not text or not text.strip():
         return
+    options = load_settings()
+    text = text[:max(60, min(int(options.get("voice_max_chars", 750)), 2000))]
+    engine = options.get("tts_engine", "auto")
+    if engine in ("auto", "edge"):
+        try:
+            if _speak_edge(text, options):
+                return
+        except Exception:
+            pass
     try:
-        if speak_neural(text):
+        if engine in ("auto", "piper") and speak_neural(text):
             return
     except Exception:
         # Missing/incompatible model must never silence JARVIS.
