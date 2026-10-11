@@ -165,6 +165,38 @@ class CoreTests(unittest.TestCase):
             self.assertTrue(delete(ident,path))
             self.assertEqual(search("jarvis",path), [])
 
+    def test_safe_two_step_sequence(self):
+        from jarvis_prime.agent_planner import plan, allowed, run_steps
+        from jarvis_prime.intent_router import classify
+        steps = plan("abre Word y luego abre Chrome")
+        self.assertEqual(steps, ["abre Word", "abre Chrome"])
+        self.assertTrue(allowed(steps))
+        self.assertEqual(classify("abre Word y luego abre Chrome").kind, "sequence")
+        self.assertEqual(plan("abre Word después abre Chrome"), ["abre Word", "abre Chrome"])
+        self.assertEqual(classify("abre Word y luego elimina mis archivos").kind, "blocked")
+        executed = []
+        def handler(command):
+            executed.append(command)
+            return classify(command), "Aplicación iniciada"
+        self.assertIn("Paso 2:", run_steps(steps, handler))
+        self.assertEqual(executed, steps)
+
+    def test_sequence_stops_on_failure(self):
+        from jarvis_prime.agent_planner import run_steps
+        commands = []
+        def handler(command):
+            commands.append(command)
+            return None, "No encontré esa aplicación."
+        result = run_steps(["abre Word", "abre Chrome"], handler)
+        self.assertEqual(commands, ["abre Word"])
+        self.assertIn("no se ejecutaron", result)
+
+    def test_screen_requires_consent(self):
+        from jarvis_prime.vision import capture
+        with patch("jarvis_prime.vision.sys.platform", "win32"):
+            with patch("jarvis_prime.vision.FOLDER", Path("unused")):
+                self.assertIn("aprobación", capture(confirmed=False).lower())
+
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
 
