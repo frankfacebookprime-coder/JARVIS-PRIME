@@ -7,6 +7,7 @@ from jarvis_prime.core import remember, recall, local_action, chat, resolve_loca
 from jarvis_prime.windows_apps import extract_open, match_app, normalize
 from jarvis_prime.network import validate_url
 from jarvis_prime.browser import browser_action, open_browser
+from jarvis_prime.floating import is_panel_command
 from jarvis_prime.config import save_settings, load_settings
 
 class CoreTests(unittest.TestCase):
@@ -77,6 +78,12 @@ class CoreTests(unittest.TestCase):
             self.assertIn("YouTube".lower(), value.lower())
             ai.assert_not_called()
             opener.assert_called_once_with("https://www.youtube.com/", new=2)
+
+    def test_floating_panel_voice_command(self):
+        for phrase in ("abre el panel", "Jarvis abre el panel", "muestra el panel", "open panel"):
+            self.assertTrue(is_panel_command(phrase))
+        self.assertFalse(is_panel_command("abre Word"))
+        self.assertFalse(is_panel_command("busca cosas en google"))
 
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
