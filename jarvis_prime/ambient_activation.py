@@ -38,20 +38,27 @@ class ClapDetector:
         self.last_hit = -1000.0
         self.last_trigger = -1000.0
         self.noise = .012
+        self.armed = True
+        self.quiet_frames = 0
 
     def feed(self, rms, peak, now):
         rms = max(0., float(rms))
         peak = max(0., float(peak))
         # Adapt only to ambient levels below the impulsive threshold.
-        threshold = max(.13, self.noise * 5.5)
+        threshold = max(.08, self.noise * 4.5)
         impulse = peak >= threshold and rms >= max(.025, self.noise * 1.8)
         if not impulse:
+            self.quiet_frames += 1
+            if self.quiet_frames >= 2:
+                self.armed = True
             self.noise = max(.002, min(.075, self.noise * .985 + min(rms, .075) * .015))
             if self.first is not None and now - self.first > self.max_gap:
                 self.first = None
             return False
-        if now-self.last_hit < .12 or now-self.last_trigger < self.cooldown:
+        if not self.armed or now-self.last_hit < .12 or now-self.last_trigger < self.cooldown:
             return False
+        self.armed = False
+        self.quiet_frames = 0
         self.last_hit = now
         if self.first is not None and self.min_gap <= now-self.first <= self.max_gap:
             self.first = None
@@ -126,8 +133,10 @@ class AmbientActivation:
                     if mode in ("clap", "both") and detector.feed(rms, peak, time.monotonic()):
                         triggered = "clap"
                         break
-                    if recognize and recognize.AcceptWaveform(raw):
-                        transcript = json.loads(recognize.Result()).get("text", "")
+                    if recognize:
+                        completed = recognize.AcceptWaveform(raw)
+                        item = json.loads(recognize.Result() if completed else recognize.PartialResult())
+                        transcript = item.get("text" if completed else "partial", "")
                         if wake_detected(transcript, word):
                             triggered = "wake"
                             break
