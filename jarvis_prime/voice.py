@@ -32,7 +32,7 @@ def speak(text):
     options = load_settings()
     text = text[:max(60, min(int(options.get("voice_max_chars", 750)), 2000))]
     engine = options.get("tts_engine", "auto")
-    if engine in ("auto", "edge"):
+    if engine == "edge":
         try:
             if _speak_edge(text, options):
                 return
@@ -44,6 +44,12 @@ def speak(text):
     except Exception:
         # Missing/incompatible model must never silence JARVIS.
         pass
+    if engine == "auto":
+        try:
+            if _speak_edge(text, options):
+                return
+        except Exception:
+            pass
     if sys.platform == "win32":
         # Speech engine is built into Windows; no API key or audio upload needed.
         script = """Add-Type -AssemblyName System.Speech
