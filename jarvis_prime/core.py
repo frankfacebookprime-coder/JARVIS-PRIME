@@ -14,6 +14,14 @@ from .diagnostics import system_summary, running_processes
 from .browser import open_browser
 from .intent_router import classify
 from .window_control import handle_windows
+from .guardian import authorize, emergency_stop, resume, audit
+from .second_brain import handle as handle_brain
+from .pc_tools import execute as shortcut_action
+from .vision import capture
+from .healthcheck import report
+from .system_monitor import snapshot
+from .skills import catalog
+from .agent_planner import plan, allowed
 
 DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
@@ -98,6 +106,23 @@ def execute(text):
         return intent, "Escribe o dicta una solicitud."
     if intent.kind == "panel":
         return intent, "Abriendo panel."
+    if intent.kind == "guardian":
+        if normalize_command(value) in ("deten jarvis", "detener jarvis", "parada de emergencia"):
+            return intent, emergency_stop()
+        return intent, resume()
+    if intent.kind == "blocked":
+        return intent, "Operación sensible no autorizada. No se ejecutó ningún comando."
+    if intent.kind == "health":
+        command = normalize_command(value)
+        if command == "lista habilidades":
+            return intent, catalog()
+        if command in ("monitor del sistema", "estado de recursos"):
+            return intent, snapshot()
+        return intent, report()
+    if intent.kind == "memory":
+        return intent, handle_brain(value)
+    if intent.kind == "vision":
+        return intent, capture(confirmed=False)
     if intent.kind == "ai":
         return intent, chat(value)
     if value.lower().startswith("recuerda "):
@@ -109,6 +134,13 @@ def execute(text):
         return intent, system_summary()
     if command in ("ver procesos", "que procesos estan abiertos", "mostrar procesos"):
         return intent, running_processes()
+    if intent.kind in ("windows", "shortcut", "browser", "app", "local"):
+        ok, reason = authorize(value)
+        if not ok:
+            return intent, reason
+        audit(intent.kind, "requested")
+    if intent.kind == "shortcut":
+        return intent, shortcut_action(value) or "Atajo no reconocido."
     if intent.kind == "windows":
         return intent, handle_windows(value) or "No pude identificar la ventana."
     if intent.kind == "browser":
