@@ -21,7 +21,7 @@ from .vision import capture
 from .healthcheck import report
 from .system_monitor import snapshot
 from .skills import catalog
-from .agent_planner import plan, allowed
+from .agent_planner import plan, run_steps
 
 DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
@@ -110,6 +110,8 @@ def execute(text):
         if normalize_command(value) in ("deten jarvis", "detener jarvis", "parada de emergencia"):
             return intent, emergency_stop()
         return intent, resume()
+    if intent.kind == "sequence":
+        return intent, run_steps(plan(value), execute)
     if intent.kind == "blocked":
         return intent, "Operación sensible no autorizada. No se ejecutó ningún comando."
     if intent.kind == "health":
