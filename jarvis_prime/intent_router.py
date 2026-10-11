@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass
 from .windows_apps import extract_open, normalize
 from .browser import browser_action
+from .window_control import window_request
 
 @dataclass(frozen=True)
 class Intent:
@@ -26,6 +27,8 @@ def classify(text):
     # not automatic Google/browser actions.
     if re.match(r"^(?:jarvis )?(?:investiga|explica|explicame|dime|que es|como funciona|cuales son|resume|resumeme|hazme un resumen)\b", n):
         return Intent("ai", True)
+    if window_request(text) is not None:
+        return Intent("windows")
     if browser_action(text) is not None:
         return Intent("browser")
     if extract_open(text) is not None:
