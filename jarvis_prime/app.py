@@ -36,11 +36,11 @@ def load_legacy_env():
                     os.environ.setdefault(key.strip(), val.strip().strip('"'))
 
 class Desktop:
-    def __init__(self):
+    def __init__(self, window=None):
         load_legacy_env()
         init_db()
-        self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | COMMAND CENTER v0.4")
+        self.root = window if window is not None else tk.Tk()
+        self.root.title("JARVIS PRIME | COMMAND CENTER v0.5")
         self.root.geometry("1190x820")
         self.root.minsize(910, 660)
         self.root.configure(bg=BG)
@@ -72,7 +72,7 @@ class Desktop:
         side.pack_propagate(False)
         tk.Label(side, text="◈  JARVIS", bg="#0e1b2b", fg="#65eaff",
                  font=("Segoe UI", 22, "bold"), anchor="w").pack(fill="x", pady=(2, 2))
-        tk.Label(side, text="P R I M E   /   0.4", bg="#0e1b2b", fg="#7994ad",
+        tk.Label(side, text="P R I M E   /   0.5", bg="#0e1b2b", fg="#7994ad",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 35))
         def nav(title, call):
             b = tk.Button(side, text=title, anchor="w", command=call,
