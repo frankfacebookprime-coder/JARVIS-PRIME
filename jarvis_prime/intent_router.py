@@ -18,7 +18,7 @@ def classify(text):
     n = normalize(text)
     if not n:
         return Intent("empty")
-    if n in ("cierra informacion", "cerrar informacion", "cierra el resultado", "oculta informacion", "cierra el panel de informacion", "oculta el resultado"):
+    if n in ("cierra informacion", "cierra la informacion", "cerrar informacion", "cierra el resultado", "oculta informacion", "cierra el panel de informacion", "oculta el resultado"):
         return Intent("dismiss_info")
     if n in ("cierra el panel", "oculta el panel", "cerrar panel", "ocultar panel"):
         return Intent("hide_panel")
