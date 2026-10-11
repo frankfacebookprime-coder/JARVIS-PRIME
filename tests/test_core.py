@@ -210,11 +210,24 @@ class CoreTests(unittest.TestCase):
         from jarvis_prime.ambient_activation import ClapDetector
         det = ClapDetector()
         self.assertFalse(det.feed(.3, .9, 10.0))
-        self.assertFalse(det.feed(.3, .9, 10.07))
-        self.assertTrue(det.feed(.3, .9, 10.45))
-        self.assertFalse(det.feed(.3, .9, 10.85))
-        self.assertFalse(det.feed(.3, .9, 11.2))
+        self.assertFalse(det.feed(.3, .9, 10.07))  # sustained clap is not a second clap
+        self.assertFalse(det.feed(.01, .015, 10.14))
+        self.assertFalse(det.feed(.01, .015, 10.22))
+        self.assertTrue(det.feed(.3, .9, 10.45))  # independent second impulse
+        self.assertFalse(det.feed(.01, .015, 10.55))
+        self.assertFalse(det.feed(.01, .015, 10.65))
+        self.assertFalse(det.feed(.3, .9, 10.85))  # cooldown blocks reactivation
         self.assertFalse(det.feed(.02, .02, 15.0))
+
+    def test_claps_require_two_separate_impulses(self):
+        from jarvis_prime.ambient_activation import ClapDetector
+        detector = ClapDetector()
+        self.assertFalse(detector.feed(.25, .8, 1.0))
+        for tick in (1.07, 1.14, 1.21, 1.28):
+            self.assertFalse(detector.feed(.25, .8, tick))
+        self.assertFalse(detector.feed(.01, .01, 1.35))
+        self.assertFalse(detector.feed(.01, .01, 1.42))
+        self.assertFalse(detector.feed(.25, .8, 2.2))  # late second clap is a first clap
 
     def test_futuristic_sound_wav_and_unknown_event(self):
         from jarvis_prime.sound import synthesize
