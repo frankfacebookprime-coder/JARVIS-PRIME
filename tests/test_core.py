@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from jarvis_prime.core import remember, recall, local_action, chat, resolve_local_command, respond
+from jarvis_prime.windows_apps import extract_open, match_app, normalize
 from jarvis_prime.network import validate_url
 from jarvis_prime.config import save_settings, load_settings
 
@@ -35,6 +36,28 @@ class CoreTests(unittest.TestCase):
             self.assertIn("calculadora", result)
             popen.assert_called_once_with(["calc.exe"], shell=False)
             remote.assert_not_called()
+
+    def test_installed_app_routing(self):
+        for phrase, name in [
+            ("abre Word", "microsoft word"),
+            ("Jarvis abre Chrome", "google chrome"),
+            ("abre Excel", "microsoft excel"),
+            ("por favor abre la calculadora", "calculadora"),
+            ("puedes abrir el bloc de notas", "bloc de notas"),
+        ]:
+            with self.subTest(phrase=phrase):
+                self.assertEqual(extract_open(phrase), name)
+
+    def test_installed_shortcut_match(self):
+        apps = {"microsoft word": "C:/Start/Word.lnk", "google chrome": "C:/Start/Chrome.lnk"}
+        self.assertEqual(match_app("Word", apps), ("shortcut", "C:/Start/Word.lnk"))
+        self.assertEqual(match_app("Chrome", apps), ("shortcut", "C:/Start/Chrome.lnk"))
+        self.assertIsNone(match_app("powershell", apps))
+        self.assertIsNone(match_app("unknown app", apps))
+
+    def test_unrecognized_not_executed(self):
+        with patch("jarvis_prime.windows_apps.sys.platform", "win32"), patch("jarvis_prime.windows_apps.discover_shortcuts", return_value={}):
+            self.assertIn("No encontré", local_action("abre una app desconocida"))
 
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
