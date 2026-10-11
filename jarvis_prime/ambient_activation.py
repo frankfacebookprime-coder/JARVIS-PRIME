@@ -13,6 +13,8 @@ import time
 MODES = ("click", "wake", "clap", "both")
 DEFAULT_WORD = "jarvis"
 SAMPLE_RATE = 16000
+_VOSK_MODELS = {}
+_VOSK_LOCK = threading.Lock()
 
 def clean_phrase(value):
     import unicodedata
@@ -93,7 +95,12 @@ class AmbientActivation:
                 if not path.is_dir():
                     raise RuntimeError("Configura una carpeta de modelo Vosk en Activación de voz.")
                 SetLogLevel(-1)
-                recognize = KaldiRecognizer(Model(str(path)), SAMPLE_RATE)
+                with _VOSK_LOCK:
+                    if str(path.resolve()) not in _VOSK_MODELS:
+                        _VOSK_MODELS.clear()
+                        _VOSK_MODELS[str(path.resolve())] = Model(str(path))
+                    model = _VOSK_MODELS[str(path.resolve())]
+                recognize = KaldiRecognizer(model, SAMPLE_RATE)
             detector = ClapDetector()
             chunks = queue.Queue(maxsize=15)
             def callback(indata, frames, timing, status):
