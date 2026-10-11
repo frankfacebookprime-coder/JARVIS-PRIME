@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
-Write-Host "JARVIS PRIME v0.7 - Instalador" -ForegroundColor Cyan
+Write-Host "JARVIS PRIME v1.2 - Instalador" -ForegroundColor Cyan
 if (Get-Command py -ErrorAction SilentlyContinue) {
     & py -3 -m venv .venv
 } else {
@@ -29,3 +29,10 @@ Write-Host "Para activar Piper también debes instalar un modelo de voz español
 Write-Host "Dependencias opcionales de JARVIS PRIME 1.0..." -ForegroundColor Cyan
 & $python -m pip install --disable-pip-version-check psutil pyautogui edge-tts playsound3
 if ($LASTEXITCODE -ne 0) { Write-Warning "Alguna mejora opcional no se instaló; JARVIS conserva funciones básicas." }
+
+Write-Host "Instalando detección opcional de doble aplauso y palabra clave..." -ForegroundColor Cyan
+& $python -m pip install --disable-pip-version-check numpy sounddevice
+if ($LASTEXITCODE -ne 0) { Write-Warning "No se instaló escucha ambiental; el clic seguirá funcionando." }
+& $python -m pip install --disable-pip-version-check vosk
+if ($LASTEXITCODE -ne 0) { Write-Warning "Vosk no disponible; el doble aplauso y el clic pueden seguir funcionando." }
+Write-Host "Para palabra clave se necesita un modelo de Vosk en español descargado por separado y su carpeta configurada desde el panel." -ForegroundColor Yellow
