@@ -34,7 +34,7 @@ class Orb:
     def __init__(self):
         init_db()
         self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | Orb v0.7")
+        self.root.title("JARVIS PRIME | Orb v1.0")
         self.root.geometry(f"{SIZE}x{SIZE}+40+220")
         self.root.overrideredirect(True)
         self.root.configure(bg=KEY)
@@ -65,6 +65,9 @@ class Orb:
         self.menu.add_command(label="Hablar con JARVIS", command=self.listen)
         self.menu.add_command(label="Ocultar panel", command=self.hide_panel)
         self.menu.add_separator()
+        self.menu.add_command(label="Diagnóstico", command=lambda: self.panel_action("diagnostico completo"))
+        self.menu.add_command(label="Monitor del sistema", command=lambda: self.panel_action("monitor del sistema"))
+        self.menu.add_command(label="Detener acciones", command=lambda: self.panel_action("deten jarvis"))
         self.menu.add_command(label="Salir de JARVIS", command=self.close)
         self.root.bind("<Escape>", lambda _: self.hide_panel())
         self.root.after(50, self.animate)
@@ -243,6 +246,10 @@ class Orb:
         self.draw()
         if self.root.winfo_exists():
             self.root.after(55, self.animate)
+
+    def panel_action(self, command):
+        self.show_panel()
+        self.panel.quick_command(command)
 
     def close(self):
         self.root.destroy()
