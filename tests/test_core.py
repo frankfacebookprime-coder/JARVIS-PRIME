@@ -197,6 +197,45 @@ class CoreTests(unittest.TestCase):
             with patch("jarvis_prime.vision.FOLDER", Path("unused")):
                 self.assertIn("aprobación", capture(confirmed=False).lower())
 
+    def test_activation_phrase_boundaries(self):
+        from jarvis_prime.ambient_activation import wake_detected, clean_phrase, MODES
+        self.assertTrue(wake_detected("Oye Jarvis", "jarvis"))
+        self.assertTrue(wake_detected("Járvis abre Word", "jarvis"))
+        self.assertFalse(wake_detected("jarvisito", "jarvis"))
+        self.assertTrue(wake_detected("hola prime", "hola prime"))
+        self.assertIn("both", MODES)
+        self.assertEqual(clean_phrase("  JÁRVIS!!  "), "jarvis")
+
+    def test_two_claps_with_cooldown(self):
+        from jarvis_prime.ambient_activation import ClapDetector
+        det = ClapDetector()
+        self.assertFalse(det.feed(.3, .9, 10.0))
+        self.assertFalse(det.feed(.3, .9, 10.07))
+        self.assertTrue(det.feed(.3, .9, 10.45))
+        self.assertFalse(det.feed(.3, .9, 10.85))
+        self.assertFalse(det.feed(.3, .9, 11.2))
+        self.assertFalse(det.feed(.02, .02, 15.0))
+
+    def test_futuristic_sound_wav_and_unknown_event(self):
+        from jarvis_prime.sound import synthesize
+        import io, wave
+        wave_bytes = synthesize("listen")
+        with wave.open(io.BytesIO(wave_bytes), "rb") as wav:
+            self.assertEqual(wav.getnchannels(), 1)
+            self.assertGreater(wav.getnframes(), 100)
+        self.assertEqual(synthesize("not-a-cue"), b"")
+
+    def test_information_panel_commands(self):
+        from jarvis_prime.intent_router import classify
+        self.assertEqual(classify("cierra la información").kind, "dismiss_info")
+        self.assertEqual(classify("oculta el panel").kind, "hide_panel")
+        self.assertEqual(classify("abre el panel").kind, "panel")
+
+    def test_activation_default_does_not_enable_ambient_capture(self):
+        from jarvis_prime.config import DEFAULTS
+        self.assertEqual(DEFAULTS["activation_mode"], "click")
+        self.assertEqual(DEFAULTS["info_panel_timeout"], 0)
+
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
 
