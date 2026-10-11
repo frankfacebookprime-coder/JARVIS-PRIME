@@ -25,3 +25,7 @@ Write-Host "Instalando automatización de ventanas (opcional)..." -ForegroundCol
 if ($LASTEXITCODE -ne 0) { Write-Warning "pywinauto no disponible; JARVIS seguirá abriendo aplicaciones normalmente." }
 Write-Host "Piper neural TTS es opcional: ejecuta .venv\Scripts\python.exe -m pip install piper-tts" -ForegroundColor Yellow
 Write-Host "Para activar Piper también debes instalar un modelo de voz español con licencia compatible." -ForegroundColor Yellow
+
+Write-Host "Dependencias opcionales de JARVIS PRIME 1.0..." -ForegroundColor Cyan
+& $python -m pip install --disable-pip-version-check psutil pyautogui edge-tts playsound3
+if ($LASTEXITCODE -ne 0) { Write-Warning "Alguna mejora opcional no se instaló; JARVIS conserva funciones básicas." }
