@@ -149,6 +149,8 @@ class Orb:
             intent, answer = execute(phrase)
             if intent.kind == "panel":
                 self.messages.put(("panel", None))
+            elif intent.kind == "vision":
+                self.messages.put(("vision", None))
             elif intent.kind == "ai" and intent.visual:
                 self.messages.put(("information", (phrase, answer)))
             self.messages.put(("answered", answer))
@@ -170,6 +172,9 @@ class Orb:
                 kind, value = self.messages.get_nowait()
                 if kind == "panel":
                     self.show_panel()
+                elif kind == "vision":
+                    self.show_panel()
+                    self.panel.capture_with_consent()
                 elif kind == "information":
                     question, answer = value
                     self.show_panel()
