@@ -1,6 +1,24 @@
-# JARVIS PRIME v0.4 — Command Center, navegador y voz
+# JARVIS PRIME v0.5 — Asistente circular flotante para Windows
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
+
+## Modo flotante por defecto (nuevo v0.5)
+
+JARVIS ahora inicia como **una esfera circular flotante y animada** sobre Windows, en lugar de abrir el panel completo. Es una ventana sin bordes y siempre visible. En Windows se intenta aplicar transparencia al exterior del círculo.
+
+- **Un clic** sobre la esfera: abre el panel grande o lo oculta.
+- **Arrastrar** la esfera: mueve JARVIS a otra posición de la pantalla.
+- **Doble clic**: escucha una orden en español mediante el micrófono y responde con voz.
+- **Clic derecho**: menú con **Abrir panel**, **Hablar con JARVIS**, **Ocultar panel** y **Salir**.
+- **Orden de voz:** «Jarvis, abre el panel» abre el Command Center solo cuando se solicita.
+- **Cerrar el panel** con la X lo oculta; la esfera permanece funcionando. La opción **Salir** en la esfera cierra toda la aplicación.
+
+La escucha **no está siempre encendida**: debes activar una sesión mediante doble clic o el menú, por privacidad y para evitar capturas accidentales. La voz usa las dependencias y permisos documentados más abajo.
+
+Si necesitas abrir únicamente el panel clásico para diagnosticar, desde PowerShell puedes ejecutar:
+`.venv\\Scripts\\python.exe -m jarvis_prime.app`.
+
+Al actualizar, **no borres** `%USERPROFILE%\\.jarvis-prime`: allí se guardan la memoria, las claves de API y preferencias.
 
 ## Instalación (Windows 10/11, Python 3.10+)
 
@@ -24,8 +42,8 @@ Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde
 - `busca gatos en Google` hace una búsqueda web.
 - La intención web se procesa **antes** de buscar una app instalada. La apertura se solicita al sistema operativo, pero debe verificarse visualmente en el equipo.
 
-### Nuevo panel
-- Barra lateral, accesos rápidos a YouTube, Google, Word y Chrome.
+### Panel avanzado (opcional)
+- Panel oculto por defecto y accesible desde la esfera. Barra lateral, accesos rápidos a YouTube, Google, Word y Chrome.
 - HUD circular animado, área central de conversación y estado de IA.
 - Botón HABLAR y casilla de voz (activada por defecto). Si falla audio, el chat de texto continúa funcionando.
 
@@ -64,7 +82,7 @@ Nota: PyAudio puede necesitar correcciones manuales en ciertas versiones de Pyth
 No copies contraseñas ni claves a conversaciones, tickets o capturas. No subas `.env` a GitHub.
 
 ## Arquitectura
-- `jarvis_prime/app.py`: interfaz Tkinter (UI thread + cola para tareas asíncronas).
+- `jarvis_prime/floating.py`: esfera flotante transparente, animación, arrastre, menú y voz.\n- `jarvis_prime/app.py`: panel completo opcional (UI thread + cola para tareas asíncronas).
 - `jarvis_prime/config.py`: preferencias locales + protección DPAPI de credenciales.
 - `jarvis_prime/network.py`: validación de URLs, conexión y descubrimiento de modelos.
 - `jarvis_prime/core.py`: memoria, comandos explícitos y router básico.
