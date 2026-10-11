@@ -170,8 +170,7 @@ class Desktop:
             self.hud.create_arc(x-radius, y-radius, x+radius, y+radius,
                                 start=angle, extent=75, style="arc", outline="#a2f8ff", width=3)
         self.hud.create_text(x, y, text="J", fill="#d4faff", font=("Segoe UI", 27, "bold"))
-        self.hud.create_text(x-135, y, text="SISTEMA ACTIVO", fill=ACCENT, font=("Consolas", 10, "bold"))
-        self.hud.create_text(x+145, y, text="CONTROL WINDOWS", fill=ACCENT, font=("Consolas", 10, "bold"))
+        self.hud.create_text(x, y+65, text="VOICE • ONLINE", fill=ACCENT, font=("Consolas", 9, "bold"))
 
     def animate_hud(self):
         self.hud_phase = (self.hud_phase + 2) % 360
