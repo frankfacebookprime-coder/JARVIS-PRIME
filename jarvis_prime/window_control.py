@@ -33,7 +33,7 @@ def handle_windows(text):
     if sys.platform != "win32":
         return "Las ventanas solo se pueden controlar en Windows."
     try:
-        from pywinauto import Desktop
+        import pywinauto
     except ImportError:
         return "Instala pywinauto para consultar y enfocar ventanas."
     windows = visible_windows()
@@ -51,5 +51,5 @@ def handle_windows(text):
     try:
         window.set_focus()
         return "Ventana enfocada: " + name[:120]
-    except (OSError, RuntimeError, Exception) as exc:
+    except Exception as exc:
         return "No pude enfocar la ventana: " + str(exc)[:140]
