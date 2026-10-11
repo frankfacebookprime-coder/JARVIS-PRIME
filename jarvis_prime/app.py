@@ -9,6 +9,9 @@ from pathlib import Path
 from .core import init_db, respond
 from .config import load_key, load_settings, save_key, save_settings
 from .network import fetch_models, complete, validate_url
+from .windows_apps import list_apps
+from .voice import speak, listen_once
+import math
 
 BG = "#080f1d"
 PANEL = "#101e31"
@@ -37,16 +40,19 @@ class Desktop:
         load_legacy_env()
         init_db()
         self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | Control Center v0.2")
-        self.root.geometry("1080x720")
+        self.root.title("JARVIS PRIME | Control Center v0.3")
+        self.root.geometry("1160x760")
         self.root.minsize(740, 530)
         self.root.configure(bg=BG)
         self.results = queue.Queue()
         self.busy = False
         self.models = []
+        self.voice_enabled = tk.BooleanVar(value=False)
+        self.hud_phase = 0
         self.settings = load_settings()
         self.build()
         self.root.after(90, self.drain)
+        self.root.after(60, self.animate_hud)
 
     def label(self, parent, text, size=10, fg=FG, bold=False, **opts):
         return tk.Label(parent, text=text, bg=parent.cget("bg"), fg=fg,
@@ -63,18 +69,25 @@ class Desktop:
         tk.Label(top, text="◉  JARVIS PRIME", bg=PANEL, fg=ACCENT,
                  font=("Segoe UI", 23, "bold")).pack(side="left")
         self.button(top, "⚙  CONFIGURAR IA", self.settings_window).pack(side="right")
-        self.label(self.root, "CENTRO DE CONTROL  •  CHAT  •  MEMORIA  •  WINDOWS", 10, MUTED).pack(anchor="w", padx=25, pady=(18, 10))
+        self.label(self.root, "CENTRO DE CONTROL  /  ACCIONES WINDOWS  /  VOZ  /  INTELIGENCIA", 10, MUTED).pack(anchor="w", padx=25, pady=(14, 8))
+        self.hud = tk.Canvas(self.root, bg=BG, height=140, highlightthickness=0)
+        self.hud.pack(fill="x", padx=25)
+        self.hud.bind("<Configure>", lambda event: self.draw_hud())
         statusbar = tk.Frame(self.root, bg=BG)
         statusbar.pack(fill="x", padx=24)
         self.status = self.label(statusbar, "", 10, ACCENT)
         self.status.pack(side="left")
         self.update_status()
         self.button(statusbar, "NUEVO CHAT", self.clear_chat, PANEL2).pack(side="right")
+        self.button(statusbar, "APLICACIONES", self.show_apps, PANEL2).pack(side="right", padx=8)
+        self.button(statusbar, "🎙  HABLAR", self.listen_voice, PANEL2).pack(side="right", padx=8)
+        tk.Checkbutton(statusbar, text="Leer respuestas", variable=self.voice_enabled,
+                       bg=BG, fg=MUTED, selectcolor=PANEL2, activebackground=BG).pack(side="right", padx=8)
         self.output = tk.Text(self.root, bg=PANEL, fg=FG, insertbackground=FG,
                               font=("Segoe UI", 12), wrap="word", relief="flat",
                               padx=24, pady=20, state="disabled", spacing3=8)
         self.output.pack(fill="both", expand=True, padx=24, pady=16)
-        self.add("SISTEMA", "Bienvenido. Abre CONFIGURAR IA para conectar tu proveedor.\nTambién puedes escribir: abrir calculadora · recuerda comprar leche · qué recuerdas")
+        self.add("SISTEMA", "JARVIS PRIME 0.3 preparado. Prueba: abre Word · abre Chrome · abre calculadora · qué aplicaciones tengo.\\nUsa HABLAR para dictar una orden (requiere activar las dependencias de voz).")
         bottom = tk.Frame(self.root, bg=BG)
         bottom.pack(fill="x", padx=24, pady=(0, 24))
         self.entry = tk.Entry(bottom, bg=PANEL2, fg=FG, insertbackground=FG,
@@ -84,6 +97,46 @@ class Desktop:
         self.send_button = self.button(bottom, "ENVIAR  ↗", self.send)
         self.send_button.pack(side="right", padx=(9, 0), fill="y")
         self.entry.focus_set()
+
+    def draw_hud(self):
+        self.hud.delete("all")
+        w = self.hud.winfo_width()
+        if w < 200:
+            w = 1000
+        x, y = w / 2, 68
+        phase = self.hud_phase
+        for radius, stroke, speed in [(55, "#1d5670", 0.9), (44, "#2b9ab8", -1.3), (30, "#50dff5", 2.1)]:
+            self.hud.create_oval(x-radius, y-radius, x+radius, y+radius, outline=stroke, width=2)
+            angle = (phase * speed) % 360
+            self.hud.create_arc(x-radius, y-radius, x+radius, y+radius,
+                                start=angle, extent=75, style="arc", outline="#a2f8ff", width=3)
+        self.hud.create_text(x, y, text="J", fill="#d4faff", font=("Segoe UI", 27, "bold"))
+        self.hud.create_text(x-135, y, text="SISTEMA ACTIVO", fill=ACCENT, font=("Consolas", 10, "bold"))
+        self.hud.create_text(x+145, y, text="CONTROL WINDOWS", fill=ACCENT, font=("Consolas", 10, "bold"))
+
+    def animate_hud(self):
+        self.hud_phase = (self.hud_phase + 2) % 360
+        self.draw_hud()
+        self.root.after(60, self.animate_hud)
+
+    def show_apps(self):
+        def done(value, error):
+            self.add("APLICACIONES", "Error: " + error if error else
+                     ("Instaladas en Inicio:\\n" + "\\n".join(value[:80]) if value else "Sin accesos detectados."))
+        self.worker(list_apps, done)
+
+    def listen_voice(self):
+        self.add("VOZ", "Escuchando una frase en español…")
+        def done(value, error):
+            if error:
+                self.add("VOZ", "No pude escuchar: " + error)
+            elif value:
+                self.entry.delete(0, "end")
+                self.entry.insert(0, value)
+                self.send()
+            else:
+                self.add("VOZ", "No pude comprender la frase.")
+        self.worker(listen_once, done)
 
     def add(self, who, message):
         self.output.configure(state="normal")
@@ -132,7 +185,10 @@ class Desktop:
         self.busy = True
         self.send_button.configure(state="disabled", text="PENSANDO…")
         def done(answer, error):
-            self.add("JARVIS", "Error: " + error if error else answer)
+            message = "Error: " + error if error else answer
+            self.add("JARVIS", message)
+            if self.voice_enabled.get() and not error and answer:
+                self.worker(lambda: speak(str(answer)), lambda value, issue: self.add("VOZ", "Error de voz: " + issue) if issue else None)
             self.busy = False
             self.send_button.configure(state="normal", text="ENVIAR  ↗")
         self.worker(lambda: respond(msg), done)
