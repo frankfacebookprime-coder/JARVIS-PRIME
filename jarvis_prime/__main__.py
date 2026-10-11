@@ -1,3 +1,3 @@
-from .app import main
+from .floating import main
 
 main()
