@@ -21,7 +21,7 @@ Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde
 ### Windows: abrir aplicaciones con lenguaje natural
 Escribe `abre Word`, `abre Chrome`, `abre Excel`, `abre la calculadora` o `abre el bloc de notas`.
 JARVIS busca los accesos instalados del menú Inicio y las aplicaciones registradas en Windows (Get-StartApps).
-También puedes pulsar **APLICACIONES** para consultar aplicaciones detectadas.
+También puedes pulsar **APLICACIONES** para consultar aplicaciones detectadas.\n\nDiagnósticos de solo lectura: \`estado de mi computadora\` y \`ver procesos\`. Estos comandos no hacen cambios en el sistema.
 No ejecuta comandos arbitrarios ni instala programas automáticamente. Si hay nombres ambiguos o una aplicación no está instalada, informa del fallo.
 El mensaje «Windows recibió la orden» significa que se inició el lanzamiento; no confirma que la ventana esté visible.
 
