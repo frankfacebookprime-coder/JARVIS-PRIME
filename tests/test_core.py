@@ -8,6 +8,8 @@ from jarvis_prime.windows_apps import extract_open, match_app, normalize
 from jarvis_prime.network import validate_url
 from jarvis_prime.browser import browser_action, open_browser
 from jarvis_prime.floating import is_panel_command
+from jarvis_prime.intent_router import classify, information_title
+from jarvis_prime.panel_renderer import split_sections
 from jarvis_prime.config import save_settings, load_settings
 
 class CoreTests(unittest.TestCase):
@@ -84,6 +86,33 @@ class CoreTests(unittest.TestCase):
             self.assertTrue(is_panel_command(phrase))
         self.assertFalse(is_panel_command("abre Word"))
         self.assertFalse(is_panel_command("busca cosas en google"))
+
+    def test_intent_routing_v06(self):
+        cases = [
+            ("abre Word", "app"),
+            ("abre YouTube en Google", "browser"),
+            ("qué es Linux", "ai"),
+            ("investiga Wim Hof y muéstramelo", "ai"),
+            ("abre el panel", "panel"),
+            ("estado de mi computadora", "local"),
+            ("ver procesos", "local"),
+        ]
+        for message, expected in cases:
+            with self.subTest(message=message):
+                self.assertEqual(classify(message).kind, expected)
+        self.assertTrue(classify("explícame qué es Python").visual)
+        self.assertEqual(information_title("investiga Linux y muéstramelo"), "Linux")
+        self.assertEqual(split_sections("Hola mundo")[0][0], "text")
+
+    def test_intent_executor_never_sends_app_to_ai(self):
+        from jarvis_prime.core import execute
+        with patch("jarvis_prime.core.local_action", return_value="Aplicación iniciada") as action:
+            with patch("jarvis_prime.core.chat") as remote:
+                intent, answer = execute("abre Word")
+                self.assertEqual(intent.kind, "app")
+                self.assertEqual(answer, "Aplicación iniciada")
+                action.assert_called_once()
+                remote.assert_not_called()
 
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
