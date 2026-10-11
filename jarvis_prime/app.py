@@ -320,6 +320,10 @@ class Desktop:
             done(answer, None)
             if intent.kind == "ai" and intent.visual:
                 self.show_information(msg, answer)
+            elif intent.kind == "dismiss_info":
+                self.dismiss_information()
+            elif intent.kind == "hide_panel":
+                self.root.withdraw()
             if intent.kind == "vision":
                 self.capture_with_consent()
         self.worker(job, routed)
