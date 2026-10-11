@@ -315,13 +315,14 @@ class Desktop:
     def voice_settings_window(self):
         win = tk.Toplevel(self.root)
         win.title("JARVIS PRIME | Motor de voz")
-        win.geometry("520x440")
+        win.geometry("520x560")
         win.configure(bg=PANEL)
         saved = load_settings()
         engine = tk.StringVar(value=saved.get("tts_engine", "auto"))
         voice_id = tk.StringVar(value=saved.get("tts_voice", "es-MX-DaliaNeural"))
         rate = tk.IntVar(value=int(saved.get("tts_rate", 0)))
         maximum = tk.IntVar(value=int(saved.get("voice_max_chars", 750)))
+        pause = tk.DoubleVar(value=float(saved.get("pause_threshold", 1.0)))
         self.label(win, "MOTOR DE VOZ", 16, ACCENT, True).pack(anchor="w", padx=25, pady=15)
         self.label(win, "Motor", 10, MUTED).pack(anchor="w", padx=25)
         ttk.Combobox(win, textvariable=engine, state="readonly", values=["auto","edge","piper","sapi"]).pack(fill="x", padx=25)
@@ -331,10 +332,14 @@ class Desktop:
         tk.Scale(win, from_=-50, to=50, variable=rate, orient="horizontal", bg=PANEL, fg=FG, highlightthickness=0).pack(fill="x", padx=25)
         self.label(win, "Máximo de caracteres hablados", 10, MUTED).pack(anchor="w", padx=25, pady=(12,0))
         tk.Scale(win, from_=100, to=1400, resolution=50, variable=maximum, orient="horizontal", bg=PANEL, fg=FG, highlightthickness=0).pack(fill="x", padx=25)
+        self.label(win, "Pausa para detectar fin de frase (segundos)", 10, MUTED).pack(anchor="w", padx=25, pady=(12,0))
+        tk.Scale(win, from_=0.5, to=2.5, resolution=0.1, variable=pause,
+                 orient="horizontal", bg=PANEL, fg=FG, highlightthickness=0).pack(fill="x", padx=25)
         def save_voice():
             values = load_settings()
             values.update(tts_engine=engine.get(), tts_voice=voice_id.get().strip(),
-                          tts_rate=rate.get(), voice_max_chars=maximum.get())
+                          tts_rate=rate.get(), voice_max_chars=maximum.get(),
+                          pause_threshold=pause.get())
             save_settings(values)
             win.destroy()
             self.add("SISTEMA", "Preferencias de voz guardadas.")
