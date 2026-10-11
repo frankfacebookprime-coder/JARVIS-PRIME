@@ -100,14 +100,19 @@ class AmbientActivation:
                 from vosk import Model, KaldiRecognizer, SetLogLevel
                 path = Path(model_path).expanduser()
                 if not path.is_dir():
-                    raise RuntimeError("Configura una carpeta de modelo Vosk en Activación de voz.")
-                SetLogLevel(-1)
-                with _VOSK_LOCK:
-                    if str(path.resolve()) not in _VOSK_MODELS:
-                        _VOSK_MODELS.clear()
-                        _VOSK_MODELS[str(path.resolve())] = Model(str(path))
-                    model = _VOSK_MODELS[str(path.resolve())]
-                recognize = KaldiRecognizer(model, SAMPLE_RATE)
+                    if mode == "both":
+                        self.on_status("Vosk sin modelo; activo solo doble aplauso. Configura el modelo de voz.")
+                    else:
+                        raise RuntimeError("Configura una carpeta de modelo Vosk en Activación de voz.")
+                if path.is_dir():
+                    SetLogLevel(-1)
+                if path.is_dir():
+                    with _VOSK_LOCK:
+                        if str(path.resolve()) not in _VOSK_MODELS:
+                            _VOSK_MODELS.clear()
+                            _VOSK_MODELS[str(path.resolve())] = Model(str(path))
+                        model = _VOSK_MODELS[str(path.resolve())]
+                    recognize = KaldiRecognizer(model, SAMPLE_RATE)
             detector = ClapDetector()
             chunks = queue.Queue(maxsize=15)
             def callback(indata, frames, timing, status):
