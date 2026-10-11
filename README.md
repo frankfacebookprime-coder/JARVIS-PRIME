@@ -1,19 +1,19 @@
-# JARVIS PRIME v0.5 — Asistente circular flotante para Windows
+# JARVIS PRIME v0.6 — Esfera flotante y visualización inteligente
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
 
-## Modo flotante por defecto (nuevo v0.5)
+## Modo flotante (v0.6)
 
 JARVIS ahora inicia como **una esfera circular flotante y animada** sobre Windows, en lugar de abrir el panel completo. Es una ventana sin bordes y siempre visible. En Windows se intenta aplicar transparencia al exterior del círculo.
 
-- **Un clic** sobre la esfera: abre el panel grande o lo oculta.
+- **Un clic** sobre la esfera: activa una sesión de voz en español.
 - **Arrastrar** la esfera: mueve JARVIS a otra posición de la pantalla.
-- **Doble clic**: escucha una orden en español mediante el micrófono y responde con voz.
+- **Doble clic**: abre u oculta el panel completo.
 - **Clic derecho**: menú con **Abrir panel**, **Hablar con JARVIS**, **Ocultar panel** y **Salir**.
 - **Orden de voz:** «Jarvis, abre el panel» abre el Command Center solo cuando se solicita.
 - **Cerrar el panel** con la X lo oculta; la esfera permanece funcionando. La opción **Salir** en la esfera cierra toda la aplicación.
 
-La escucha **no está siempre encendida**: debes activar una sesión mediante doble clic o el menú, por privacidad y para evitar capturas accidentales. La voz usa las dependencias y permisos documentados más abajo.
+La escucha **no está siempre encendida**: debes activar una sesión mediante un clic o el menú, por privacidad y para evitar capturas accidentales. La voz usa las dependencias y permisos documentados más abajo.
 
 Si necesitas abrir únicamente el panel clásico para diagnosticar, desde PowerShell puedes ejecutar:
 `.venv\\Scripts\\python.exe -m jarvis_prime.app`.
@@ -41,6 +41,13 @@ Al actualizar, **no borres** `%USERPROFILE%\\.jarvis-prime`: allí se guardan la
 - `abre YouTube`, `abre Google`, `abre Gmail`, `abre GitHub`.
 - `busca gatos en Google` hace una búsqueda web.
 - La intención web se procesa **antes** de buscar una app instalada. La apertura se solicita al sistema operativo, pero debe verificarse visualmente en el equipo.
+
+### IA y panel de información (v0.6)
+- **Órdenes** («abre Word», «abre YouTube», «ver procesos») se resuelven con herramientas locales verificables, no con instrucciones generadas por el modelo.
+- **Consultas** («qué es Linux», «investiga Wim Hof y muéstramelo») se envían a la API de IA configurada y abren automáticamente un panel de información legible, con encabezado y tarjetas.
+- El texto generado por la IA es solamente contenido visual; **no se ejecuta como código**.
+- La esfera reproduce efectos cortos sintetizados para escuchar, respuesta y apertura del panel en Windows.
+- La voz continúa siendo **por pulsación**, no escucha continua ni activación con palabra clave.
 
 ### Panel avanzado (opcional)
 - Panel oculto por defecto y accesible desde la esfera. Barra lateral, accesos rápidos a YouTube, Google, Word y Chrome.
@@ -91,6 +98,11 @@ No copies contraseñas ni claves a conversaciones, tickets o capturas. No subas 
 `python -m unittest discover -s tests -v`
 
 La prueba automática de Windows está en GitHub Actions. El funcionamiento visual, voz, el lanzamiento de Word y la integración con proveedores reales requieren pruebas en un equipo Windows con las apps instaladas.
+
+## Limitaciones actuales
+- La clasificación de intención está basada en reglas conservadoras; no comprende todavía cualquier instrucción ambigua o compleja.
+- El panel organiza párrafos y listas del modelo; no inventa datos, fuentes ni gráficos.
+- La verificación real del audio, transparencia y visualización requiere ejecutar en Windows.
 
 ## Próximos módulos
 Voz en español (PTT/VAD/STT/TTS), HUD circular animado, sesiones de chat, manejo seguro de ventanas/archivos, n8n y plugins, autodiagnóstico, actualizador con rollback.
