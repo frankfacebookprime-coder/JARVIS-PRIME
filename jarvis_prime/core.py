@@ -13,6 +13,7 @@ from .windows_apps import extract_open, launch_app, list_apps
 from .diagnostics import system_summary, running_processes
 from .browser import open_browser
 from .intent_router import classify
+from .window_control import handle_windows
 
 DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
@@ -108,6 +109,8 @@ def execute(text):
         return intent, system_summary()
     if command in ("ver procesos", "que procesos estan abiertos", "mostrar procesos"):
         return intent, running_processes()
+    if intent.kind == "windows":
+        return intent, handle_windows(value) or "No pude identificar la ventana."
     if intent.kind == "browser":
         return intent, open_browser(value) or "No pude abrir la página."
     if intent.kind in ("app", "local"):
