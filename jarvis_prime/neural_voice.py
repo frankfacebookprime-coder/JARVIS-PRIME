@@ -8,6 +8,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+
+_MODEL_CACHE = {}
+_MODEL_LOCK = threading.Lock()
 
 def piper_model():
     candidate = os.environ.get("JARVIS_PIPER_MODEL", "")
@@ -30,7 +34,11 @@ def speak_neural(text):
         return False
     model = piper_model()
     from piper.voice import PiperVoice
-    voice = PiperVoice.load(str(model))
+    with _MODEL_LOCK:
+        if str(model) not in _MODEL_CACHE:
+            _MODEL_CACHE.clear()
+            _MODEL_CACHE[str(model)] = PiperVoice.load(str(model))
+        voice = _MODEL_CACHE[str(model)]
     import wave
     with tempfile.TemporaryDirectory(prefix="jarvis-tts-") as folder:
         filename = str(Path(folder) / "speech.wav")
