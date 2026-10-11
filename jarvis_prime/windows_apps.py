@@ -70,17 +70,46 @@ def match_app(name, available=None):
     available = discover_shortcuts() if available is None else available
     if normalized in available:
         return ("shortcut", available[normalized])
-    for desired in [normalize(ALIASES.get(normalized, normalized)), normalized]:
+    for desired in list(dict.fromkeys([normalize(ALIASES.get(normalized, normalized)), normalized] + [k for k,v in ALIASES.items() if normalize(v) == normalized])):
         candidates = [(title, path) for title, path in available.items()
                       if title == desired or title.startswith(desired + " ") or desired.startswith(title + " ")]
         if len(candidates) == 1:
             return ("shortcut", candidates[0][1])
     return None
 
+def get_start_apps():
+    """Lookup Windows UWP/registered Start apps, using fixed read-only command."""
+    if sys.platform != "win32":
+        return {}
+    command = ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+               "Get-StartApps | Select-Object Name,AppID | ConvertTo-Json -Compress"]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=12,
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        if result.returncode != 0 or not result.stdout.strip():
+            return {}
+        import json
+        data = json.loads(result.stdout)
+        if isinstance(data, dict):
+            data = [data]
+        return {normalize(x["Name"]): x["AppID"] for x in data
+                if isinstance(x, dict) and isinstance(x.get("Name"), str)
+                and isinstance(x.get("AppID"), str) and x["AppID"]}
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return {}
+
 def launch_app(name, available=None):
     if sys.platform != "win32":
         return "Abrir aplicaciones requiere Windows."
     result = match_app(name, available)
+    if result is None and available is None and clean_name(name) not in BLOCK:
+        entries = get_start_apps()
+        normalized = clean_name(name)
+        options = [(key, value) for key, value in entries.items()
+                   if key == normalized or key.startswith(normalized + " ") or
+                   any(normalize(v) == normalized and key == alias for alias, v in ALIASES.items())]
+        if len(options) == 1:
+            result = ("startapp", options[0][1])
     if result is None:
         return ("No encontré '" + name + "' en aplicaciones instaladas o accesos del menú Inicio. "
                 "No ejecuté ningún comando. Puedes crear un acceso directo en el menú Inicio.")
@@ -88,6 +117,8 @@ def launch_app(name, available=None):
     try:
         if kind == "builtin":
             subprocess.Popen(target, shell=False)
+        elif kind == "startapp":
+            subprocess.Popen(["explorer.exe", "shell:AppsFolder\\" + target], shell=False)
         else:
             os.startfile(target)
         return "Windows recibió la orden de abrir: " + name + "."
@@ -96,4 +127,4 @@ def launch_app(name, available=None):
 
 def list_apps():
     found = discover_shortcuts()
-    return sorted(set(found) | set(BUILTINS))
+    return sorted(set(found) | set(BUILTINS) | set(get_start_apps()))
