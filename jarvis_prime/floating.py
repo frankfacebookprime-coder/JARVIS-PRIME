@@ -35,7 +35,7 @@ class Orb:
     def __init__(self):
         init_db()
         self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | Orb v1.2")
+        self.root.title("JARVIS PRIME | Orb v1.3")
         self.root.geometry(f"{SIZE}x{SIZE}+40+220")
         self.root.overrideredirect(True)
         self.root.configure(bg=KEY)
@@ -56,6 +56,8 @@ class Orb:
             lambda trigger: self.messages.put(("ambient_trigger", trigger)),
             lambda status: self.messages.put(("ambient_status", status)))
         self.ambient_signature = None
+        self.activation_status = "CLIC PARA HABLAR"
+        self.activation_quiet_until = 0.0
         self.root.after(1500, self.refresh_activation)
         self.drag_start = None
         self.suppress_click_until = 0.0
@@ -153,7 +155,7 @@ class Orb:
         if signature != self.ambient_signature:
             self.ambient.stop()
             self.ambient_signature = signature
-        if self.mode == "ready" and signature[0] != "click":
+        if self.mode == "ready" and signature[0] != "click" and time.monotonic() >= self.activation_quiet_until:
             if time.monotonic() >= self.ambient.retry_after and (self.ambient.thread is None or not self.ambient.thread.is_alive()):
                 self.ambient.start(*signature)
         if self.root.winfo_exists():
@@ -165,7 +167,13 @@ class Orb:
         self.ambient.stop()
         self.mode = "listening"
         play("listen")
-        self.root.after(320, lambda: self.run_worker(self.recognize_and_respond))
+        self.wait_for_microphone(0)
+
+    def wait_for_microphone(self, attempt):
+        if self.ambient.thread is not None and self.ambient.thread.is_alive() and attempt < 25:
+            self.root.after(100, lambda: self.wait_for_microphone(attempt + 1))
+        else:
+            self.run_worker(self.recognize_and_respond)
 
     def recognize_and_respond(self):
         try:
@@ -204,9 +212,9 @@ class Orb:
                 kind, value = self.messages.get_nowait()
                 if kind == "ambient_trigger":
                     if self.mode == "ready":
-                        play(value)
                         self.listen()
                 elif kind == "ambient_status":
+                    self.activation_status = value[:75]
                     if self.panel is not None and self.panel.root.winfo_exists():
                         self.panel.add("ACTIVACIÓN", value)
                 elif kind == "dismiss_info":
@@ -236,6 +244,7 @@ class Orb:
                     play("done")
                 elif kind == "ready":
                     self.mode = "ready"
+                    self.activation_quiet_until = time.monotonic() + 1.4
                 elif kind == "status":
                     play("error")
                     if self.panel is not None and self.panel.root.winfo_exists():
@@ -291,6 +300,9 @@ class Orb:
                   "working":"PROCESANDO", "speaking":"RESPONDIENDO"}[self.mode]
         c.create_text(x, y+23, text=status, fill=active,
                       font=("Consolas", 6, "bold"))
+        if self.mode == "ready":
+            c.create_text(x, y+38, text=self.activation_status[:28].upper(), fill="#5ca0b6",
+                          font=("Consolas", 5, "bold"))
 
     def animate(self):
         self.phase = (self.phase + (4 if self.mode != "ready" else 1.8)) % 360
