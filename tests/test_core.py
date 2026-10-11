@@ -135,6 +135,36 @@ class CoreTests(unittest.TestCase):
                 (Path(folder) / "test.onnx.json").touch()
                 self.assertEqual(piper_model(), model)
 
+    def test_v1_guardian_and_modular_router(self):
+        from jarvis_prime.intent_router import classify
+        from jarvis_prime.pc_tools import parse
+        from jarvis_prime.guardian import authorize, STOP
+        cases = {"deten jarvis":"guardian", "reanuda jarvis":"guardian",
+                 "diagnostico completo":"health", "monitor del sistema":"health",
+                 "guarda en second brain proyecto":"memory",
+                 "busca en second brain proyecto":"memory",
+                 "copia lo seleccionado":"shortcut",
+                 "mira mi pantalla":"vision", "elimina mis archivos":"blocked"}
+        for phrase, expected in cases.items():
+            with self.subTest(phrase=phrase):
+                self.assertEqual(classify(phrase).kind, expected)
+        self.assertEqual(parse("copia lo seleccionado"), "ctrl+c")
+        self.assertIsNone(parse("pulsa alt f4"))
+        STOP.clear()
+        self.assertFalse(authorize("elimina mis archivos")[0])
+        STOP.set()
+        self.assertFalse(authorize("abre word")[0])
+        STOP.clear()
+
+    def test_second_brain_privacy(self):
+        from jarvis_prime.second_brain import save, search, delete
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "brain.db"
+            ident = save("mi proyecto", "JARVIS PRIME", path)
+            self.assertEqual(search("jarvis", path)[0][0], ident)
+            self.assertTrue(delete(ident,path))
+            self.assertEqual(search("jarvis",path), [])
+
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
 
