@@ -1,6 +1,31 @@
-# JARVIS PRIME v0.7 — Voz neuronal, control de ventanas y esfera reactiva
+# JARVIS PRIME v1.0 — Arquitectura modular futurista para Windows
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
+
+## Versión 1.0 — Nuevas funciones integradas
+
+Esta versión amplía el asistente existente; no requiere migrar tu memoria ni claves.
+
+- **Voz multinivel:** Piper local, Edge TTS opcional por Internet y SAPI de respaldo. En el panel, **Configurar voz** permite cambiar motor, voz, velocidad y longitud de lectura. Por defecto usa Piper si está disponible; si no, intenta Edge si sus dependencias están instaladas; finalmente SAPI.
+- **Piper optimizado:** se conserva el modelo cargado entre respuestas para reducir tiempos posteriores.
+- **Control local:** comandos de aplicación/navegador, enfocar ventanas, más atajos explícitos «copiar selección», «pegar portapapeles», «seleccionar todo», «guardar documento».
+- **Second Brain SQLite:** «guarda en second brain mi proyecto» y «busca en second brain proyecto». Memoria local consultable, sin enviar notas automáticamente a ningún servicio remoto.
+- **Guardian:** «deten jarvis» pausa nuevas operaciones de Windows; «reanuda jarvis» vuelve a permitirlas. Operaciones sensibles se bloquean por defecto. El registro de auditoría almacena solamente categoría y resultado, no contenidos de las órdenes.
+- **Monitor:** «monitor del sistema», CPU, RAM y disco, con psutil opcional.
+- **Diagnóstico:** «diagnostico completo» muestra dependencias disponibles, sin publicar credenciales.
+- **Habilidades:** «lista habilidades» muestra módulos disponibles, con registro estático.
+- **Visión con consentimiento:** «mira mi pantalla» informa que se necesita aprobación. La función de captura local está implementada como `vision.capture(confirmed=True)` para integraciones futuras con confirmación explícita; **todavía no se analiza la captura con IA**.
+- **Planificador:** `agent_planner.py` contiene una base restringida para detectar dos pasos, pero **no ejecuta aún cadenas de tareas**.
+- **Interfaz:** menú de la esfera para diagnóstico, monitor y parada; panel de preferencias de voz.
+- **Instalador:** intenta agregar dependencias opcionales `psutil`, `pyautogui`, `edge-tts` y `playsound3`. Piper requiere modelo independiente y licencia revisada.
+
+### Límites honestos de la versión 1.0
+
+No están implementados todavía una automatización general de navegador, la comprensión visual de capturas, conversación VAD de baja latencia, integración de Telegram/móvil, reproducción de voz interrumpible, planes de muchos pasos, agentes autónomos, permisos granulares por aplicación, ni selector multimodelo por costo. No se afirma que estas funciones estén terminadas. Son módulos que requieren implementación y pruebas de seguridad adicionales.
+
+### Notas de seguridad
+
+Los resultados de IA **nunca** se interpretan como código o instrucciones ejecutables. Los nuevos atajos afectan la ventana que esté activa en ese momento; verifica el foco antes de utilizarlos. Las capturas permanecen en el perfil del usuario si se realizan; no se comparten automáticamente.
 
 ## Novedades v0.7: proyectos open source
 
