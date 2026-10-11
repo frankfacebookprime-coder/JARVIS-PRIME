@@ -11,6 +11,7 @@ from .config import load_key, load_settings
 from .network import complete
 from .windows_apps import extract_open, launch_app, list_apps
 from .diagnostics import system_summary, running_processes
+from .browser import open_browser
 
 DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
@@ -100,5 +101,8 @@ def respond(text):
         return system_summary()
     if command in ("ver procesos", "que procesos estan abiertos", "mostrar procesos"):
         return running_processes()
+    browser = open_browser(value)
+    if browser is not None:
+        return browser
     action = local_action(value)
     return action if action is not None else chat(value)
