@@ -44,7 +44,7 @@ class Desktop:
         load_legacy_env()
         init_db()
         self.root = window if window is not None else tk.Tk()
-        self.root.title("JARVIS PRIME | COMMAND CENTER v1.2")
+        self.root.title("JARVIS PRIME | COMMAND CENTER v1.3")
         self.root.geometry("1190x820")
         self.root.minsize(910, 660)
         self.root.configure(bg=BG)
@@ -77,7 +77,7 @@ class Desktop:
         side.pack_propagate(False)
         tk.Label(side, text="◈  JARVIS", bg="#0e1b2b", fg="#65eaff",
                  font=("Segoe UI", 22, "bold"), anchor="w").pack(fill="x", pady=(2, 2))
-        tk.Label(side, text="P R I M E   /   1.2", bg="#0e1b2b", fg="#7994ad",
+        tk.Label(side, text="P R I M E   /   1.3", bg="#0e1b2b", fg="#7994ad",
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x", pady=(0, 35))
         def nav(title, call):
             b = tk.Button(side, text=title, anchor="w", command=call,
@@ -88,6 +88,7 @@ class Desktop:
         nav("◉   Centro de control", lambda: self.entry.focus_set())
         nav("▤   Aplicaciones", self.show_apps)
         nav("◎   Nuevo chat", self.clear_chat)
+        nav("▤   Volver al chat", self.dismiss_information)
         nav("⚙   Configurar IA", self.settings_window)
         nav("◈   Escuchar ahora", self.listen_voice)
         nav("♫   Configurar voz", self.voice_settings_window)
@@ -123,7 +124,7 @@ class Desktop:
         self.status = self.label(statusrow, "", 10, ACCENT)
         self.status.pack(side="left")
         self.update_status()
-        self.label(statusrow, "WINDOWS  •  VOZ  •  NAVEGADOR", 9, MUTED).pack(side="right")
+        self.label(statusrow, "HUD INTEGRADO  •  CHAT  •  RESULTADOS", 9, MUTED).pack(side="right")
 
         hero = tk.Frame(main, bg=PANEL, padx=18, pady=8)
         hero.pack(fill="x", padx=26, pady=(0, 12))
@@ -137,6 +138,7 @@ class Desktop:
         self.hud = tk.Canvas(hero, bg=PANEL, height=158, width=250, highlightthickness=0)
         self.hud.pack(side="right", padx=16)
         self.hud.bind("<Configure>", lambda event: self.draw_hud())
+        self.hud.bind("<Button-1>", lambda event: self.listen_voice())
 
         controls = tk.Frame(main, bg=BG, padx=26)
         controls.pack(fill="x", pady=(0, 9))
@@ -194,7 +196,7 @@ class Desktop:
             self.hud.create_arc(x-radius, y-radius, x+radius, y+radius,
                                 start=angle, extent=75, style="arc", outline="#a2f8ff", width=3)
         self.hud.create_text(x, y, text="J", fill="#d4faff", font=("Segoe UI", 27, "bold"))
-        self.hud.create_text(x, y+65, text="JARVIS CORE • READY", fill=ACCENT, font=("Consolas", 9, "bold"))
+        self.hud.create_text(x, y+65, text="JARVIS CORE • CLIC PARA HABLAR", fill=ACCENT, font=("Consolas", 9, "bold"))
 
     def animate_hud(self):
         self.hud_phase = (self.hud_phase + 2) % 360
