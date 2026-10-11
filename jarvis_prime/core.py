@@ -1,7 +1,9 @@
 import json
+import re
 import sqlite3
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 
 from .config import load_key, load_settings
@@ -27,18 +29,42 @@ def recall(path=DB, limit=8):
         rows = conn.execute("SELECT text FROM notes ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     return [row[0] for row in rows]
 
+def normalize_command(text):
+    """Normalize accents, polite prefixes, and punctuation without guessing actions."""
+    text = "".join(c for c in unicodedata.normalize("NFKD", text.casefold()) if not unicodedata.combining(c))
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = " ".join(text.split())
+    text = re.sub(r"^(?:jarvis\s+)?(?:(?:por favor|oye|puedes|podrias|quiero que|necesito que)\s+)*", "", text)
+    text = re.sub(r"\s+por favor$", "", text)
+    return text.strip()
+
+APP_COMMANDS = {
+    "calculadora": "calc.exe",
+    "bloc de notas": "notepad.exe",
+    "block de notas": "notepad.exe",
+    "notepad": "notepad.exe",
+}
+OPEN_RE = re.compile(r"^(?:abre|abrir|abreme|inicia|iniciar|ejecuta|ejecutar|lanza)\s+(?:la|el|los|las)?\s*(.+)$")
+
+def resolve_local_command(text):
+    """Return an allowlisted Windows binary only for a whole, explicit request."""
+    normalized = normalize_command(text)
+    match = OPEN_RE.fullmatch(normalized)
+    if not match:
+        return None
+    return APP_COMMANDS.get(match.group(1).strip())
+
 def local_action(text):
-    commands = {
-        "abrir calculadora": "calc.exe", "abre calculadora": "calc.exe",
-        "abrir bloc de notas": "notepad.exe", "abre bloc de notas": "notepad.exe",
-    }
-    cmd = commands.get(text.strip().lower())
+    cmd = resolve_local_command(text)
     if cmd is None:
         return None
     if sys.platform != "win32":
         return "Este comando necesita Windows."
-    subprocess.Popen([cmd], shell=False)
-    return "Aplicación abierta."
+    try:
+        subprocess.Popen([cmd], shell=False)
+        return "He abierto " + ("la calculadora." if cmd == "calc.exe" else "el Bloc de notas.")
+    except OSError as exc:
+        return "No pude abrir la aplicación: " + str(exc)
 
 def chat(text, api_key=None, base_url=None, model=None):
     settings = load_settings()
