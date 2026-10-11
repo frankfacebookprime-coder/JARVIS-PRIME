@@ -1,10 +1,17 @@
 """Spanish speech input/output. Uses offline Windows SAPI when possible."""
 import subprocess
 import sys
+from .neural_voice import speak_neural
 
 def speak(text):
     if not text or not text.strip():
         return
+    try:
+        if speak_neural(text):
+            return
+    except Exception:
+        # Missing/incompatible model must never silence JARVIS.
+        pass
     if sys.platform == "win32":
         # Speech engine is built into Windows; no API key or audio upload needed.
         script = """Add-Type -AssemblyName System.Speech
