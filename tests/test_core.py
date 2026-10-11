@@ -10,6 +10,8 @@ from jarvis_prime.browser import browser_action, open_browser
 from jarvis_prime.floating import is_panel_command
 from jarvis_prime.intent_router import classify, information_title
 from jarvis_prime.panel_renderer import split_sections
+from jarvis_prime.window_control import window_request
+from jarvis_prime.neural_voice import piper_model
 from jarvis_prime.config import save_settings, load_settings
 
 class CoreTests(unittest.TestCase):
@@ -113,6 +115,25 @@ class CoreTests(unittest.TestCase):
                 self.assertEqual(answer, "Aplicación iniciada")
                 action.assert_called_once()
                 remote.assert_not_called()
+
+    def test_window_control_intents(self):
+        self.assertEqual(classify("qué ventanas tengo abiertas").kind, "windows")
+        self.assertEqual(classify("cambia a Chrome").kind, "windows")
+        self.assertEqual(window_request("cambia a Chrome"), ("focus", "chrome"))
+        self.assertIsNone(window_request("elimina todos los archivos"))
+        self.assertEqual(classify("explícame qué es Windows").kind, "ai")
+
+    def test_neural_voice_requires_both_model_files(self):
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+        import os
+        with TemporaryDirectory() as folder:
+            model = Path(folder) / "test.onnx"
+            model.touch()
+            with patch.dict(os.environ, {"JARVIS_PIPER_MODEL": str(model)}):
+                self.assertIsNone(piper_model())
+                (Path(folder) / "test.onnx.json").touch()
+                self.assertEqual(piper_model(), model)
 
     def test_no_api_key(self):
         self.assertIn("configurar ia", chat("hola", api_key="", model="").lower())
