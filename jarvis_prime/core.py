@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .config import load_key, load_settings
 from .network import complete
+from .windows_apps import extract_open, launch_app, list_apps
 
 DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
@@ -55,6 +56,12 @@ def resolve_local_command(text):
     return APP_COMMANDS.get(match.group(1).strip())
 
 def local_action(text):
+    target = extract_open(text)
+    if target:
+        return launch_app(target)
+    if normalize_command(text) in ("muestrame aplicaciones", "lista de aplicaciones", "que aplicaciones tengo", "ver aplicaciones"):
+        apps = list_apps()
+        return ("Aplicaciones detectadas en el menú Inicio:\\n" + "\\n".join(apps[:80])) if apps else "No pude enumerar las aplicaciones."
     cmd = resolve_local_command(text)
     if cmd is None:
         return None
