@@ -8,8 +8,9 @@ import threading
 import tkinter as tk
 
 from .app import Desktop
-from .core import init_db, respond
+from .core import init_db, execute
 from .voice import listen_once, speak
+from .sound import play
 
 SIZE = 208
 KEY = "#fc00fc"
@@ -89,13 +90,13 @@ class Orb:
 
     def single_click(self):
         self.single_click_job = None
-        self.toggle_panel()
+        self.listen()
 
     def double_click(self, event):
         if self.single_click_job is not None:
             self.root.after_cancel(self.single_click_job)
             self.single_click_job = None
-        self.listen()
+        self.toggle_panel()
         return "break"
 
     def show_menu(self, event):
@@ -112,6 +113,7 @@ class Orb:
         self.panel.root.deiconify()
         self.panel.root.lift()
         self.panel.root.focus_force()
+        play("panel")
 
     def hide_panel(self):
         if self.panel is not None and self.panel.root.winfo_exists():
@@ -127,6 +129,7 @@ class Orb:
         if self.mode != "ready":
             return
         self.mode = "listening"
+        play("listen")
         self.run_worker(self.recognize_and_respond)
 
     def recognize_and_respond(self):
@@ -136,11 +139,11 @@ class Orb:
                 self.messages.put(("status", "No reconocí tu voz."))
                 return
             self.messages.put(("heard", phrase))
-            if is_panel_command(phrase):
+            intent, answer = execute(phrase)
+            if intent.kind == "panel":
                 self.messages.put(("panel", None))
-                answer = "Abriendo el panel, a sus órdenes."
-            else:
-                answer = respond(phrase)
+            elif intent.kind == "ai" and intent.visual:
+                self.messages.put(("information", (phrase, answer)))
             self.messages.put(("answered", answer))
             try:
                 speak(answer)
@@ -160,6 +163,10 @@ class Orb:
                 kind, value = self.messages.get_nowait()
                 if kind == "panel":
                     self.show_panel()
+                elif kind == "information":
+                    question, answer = value
+                    self.show_panel()
+                    self.panel.show_information(question, answer)
                 elif kind == "heard":
                     self.mode = "working"
                     if self.panel is not None and self.panel.root.winfo_exists():
@@ -168,9 +175,11 @@ class Orb:
                     if self.panel is not None and self.panel.root.winfo_exists():
                         self.panel.add("JARVIS", value)
                     self.mode = "speaking"
+                    play("done")
                 elif kind == "ready":
                     self.mode = "ready"
                 elif kind == "status":
+                    play("error")
                     if self.panel is not None and self.panel.root.winfo_exists():
                         self.panel.add("SISTEMA", value)
         except queue.Empty:
