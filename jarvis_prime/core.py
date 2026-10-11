@@ -1,4 +1,5 @@
 import json
+from contextlib import closing
 import re
 import sqlite3
 import subprocess
@@ -14,19 +15,21 @@ DB = Path.home() / ".jarvis-prime" / "memory.sqlite3"
 
 def init_db(path=DB):
     path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn:
         conn.execute("CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY, text TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)")
+        conn.commit()
     return path
 
 def remember(text, path=DB):
     init_db(path)
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn:
         conn.execute("INSERT INTO notes(text) VALUES (?)", (text,))
+        conn.commit()
     return "Guardado en memoria local."
 
 def recall(path=DB, limit=8):
     init_db(path)
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn:
         rows = conn.execute("SELECT text FROM notes ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     return [row[0] for row in rows]
 
@@ -61,7 +64,7 @@ def local_action(text):
         return launch_app(target)
     if normalize_command(text) in ("muestrame aplicaciones", "lista de aplicaciones", "que aplicaciones tengo", "ver aplicaciones"):
         apps = list_apps()
-        return ("Aplicaciones detectadas en el menú Inicio:\\n" + "\\n".join(apps[:80])) if apps else "No pude enumerar las aplicaciones."
+        return ("Aplicaciones detectadas en el menú Inicio:\n" + "\n".join(apps[:80])) if apps else "No pude enumerar las aplicaciones."
     cmd = resolve_local_command(text)
     if cmd is None:
         return None
