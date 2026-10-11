@@ -1,6 +1,38 @@
-# JARVIS PRIME v1.1 — Tareas encadenadas y captura autorizada
+# JARVIS PRIME v1.2 — Activación por palabra clave, doble aplauso y HUD avanzado
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
+
+## Novedades v1.2 — Activación ambiental opcional
+
+La activación **está desactivada por defecto** hasta seleccionarla desde la nueva opción **Activación de voz** del Command Center o desde el menú contextual de la esfera.
+
+**Modos seleccionables:**
+- `click`: un clic activa el micrófono como siempre; es la opción por defecto.
+- `clap`: detectar dos aplausos separados aproximadamente entre 0,18 y 0,8 segundos; se requiere `numpy` y `sounddevice`. Puede haber falsos positivos con sonidos secos y golpes fuertes.
+- `wake`: escuchar una frase clave como «jarvis» mediante reconocimiento **local Vosk**. Requiere `vosk`, `numpy`, `sounddevice` y un modelo de español compatible guardado en el PC.
+- `both`: permitir doble aplauso o palabra clave usando el mismo micrófono y flujo de detección.
+
+Tras activarse, suena un efecto y JARVIS inicia **otra escucha de la instrucción**. Ejemplo: «Jarvis» [efecto de activación] «Abre Word». Las frases con la palabra clave no son necesariamente órdenes completas; espera al sonido.
+
+### Modelo Vosk para activar por voz
+
+1. Instala las dependencias con `install.ps1`.
+2. Descarga el modelo español adecuado desde el catálogo oficial de Vosk: https://alphacephei.com/vosk/models (revisa licencia, tamaño y requisitos).
+3. Descomprime el modelo en una carpeta fija del usuario, preferiblemente `%USERPROFILE%\\.jarvis-prime\\models\\vosk-es`.
+4. Abre el panel → **Activación de voz**, selecciona `wake` o `both`, escribe la palabra clave y la ruta a la carpeta descomprimida. Guarda.
+5. Si falla el modelo o micrófono, JARVIS debe mostrar error y seguirá funcionando por clic.
+
+**Privacidad:** en los modos ambientales el micrófono permanece abierto para detectar sonido, pero la detección de aplausos y la palabra clave se realizan localmente; no se guarda audio ni se manda a servicios remotos. Después de activarse, la orden se transcribe con el proveedor de voz existente (Google Speech Recognition), que **sí envía el audio de esa frase a Internet**. No se activa el micrófono ambiental de forma oculta ni en modo `click`. La escucha ambiental puede gastar CPU, especialmente Vosk.
+
+### Nuevo panel informativo
+
+- **Una sola ventana reutilizable** para resultados de IA con encabezados tecnológicos, tarjetas numeradas, acentos luminosos y bloques organizados.
+- Al comenzar una solicitud nueva, se oculta el resultado anterior; el siguiente resultado reemplaza el contenido.
+- «Cierra la información» oculta el panel de conocimientos; «Oculta el panel» oculta el Command Center.
+- En **Activación de voz** existe el control de permanencia: `0` segundos lo mantiene abierto hasta nueva orden; otro valor cierra el resultado después de ese tiempo.
+- Sonidos sintéticos PCM renovados para escuchar, activación, panel, finalización y cierre. Pueden desactivarse desde el panel.
+
+**Limitaciones:** el detector de aplausos es heurístico y requiere calibración en tu micrófono; no está garantizado que reconozca todos los aplausos ni que distinga golpes similares. Vosk puede no reconocer adecuadamente palabras personalizadas o nombres; prueba una frase clara. Las pruebas de GitHub Actions no sustituyen verificación de audio y pantalla en Windows.
 
 ## Novedades v1.1
 
