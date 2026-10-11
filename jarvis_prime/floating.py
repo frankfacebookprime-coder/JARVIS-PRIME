@@ -126,10 +126,12 @@ class Orb:
             window = tk.Toplevel(self.root)
             self.panel = Desktop(window)
             self.panel.root.protocol("WM_DELETE_WINDOW", self.hide_panel)
+        was_hidden = self.panel.root.state() == "withdrawn"
         self.panel.root.deiconify()
         self.panel.root.lift()
         self.panel.root.focus_force()
-        play("panel")
+        if was_hidden:
+            play("panel")
 
     def hide_panel(self):
         if self.panel is not None and self.panel.root.winfo_exists():
@@ -155,6 +157,7 @@ class Orb:
         if signature != self.ambient_signature:
             self.ambient.stop()
             self.ambient_signature = signature
+            self.activation_status = "CLIC PARA HABLAR" if signature[0] == "click" else "INICIANDO DETECTOR..."
         if self.mode == "ready" and signature[0] != "click" and time.monotonic() >= self.activation_quiet_until:
             if time.monotonic() >= self.ambient.retry_after and (self.ambient.thread is None or not self.ambient.thread.is_alive()):
                 self.ambient.start(*signature)
