@@ -34,7 +34,7 @@ class Orb:
     def __init__(self):
         init_db()
         self.root = tk.Tk()
-        self.root.title("JARVIS PRIME | Orb")
+        self.root.title("JARVIS PRIME | Orb v0.7")
         self.root.geometry(f"{SIZE}x{SIZE}+40+220")
         self.root.overrideredirect(True)
         self.root.configure(bg=KEY)
@@ -197,6 +197,16 @@ class Orb:
         x = SIZE / 2
         y = SIZE / 2
         t = self.phase
+        # State-reactive orbital telemetry, without external image assets.
+        palette = {"ready": "#53e9ff", "listening": "#71ffbd",
+                   "working": "#ffd58a", "speaking": "#a4caff"}
+        active = palette.get(self.mode, CYAN)
+        for i in range(12):
+            angle = math.radians(i * 30 + t * (1.7 if self.mode != "ready" else .55))
+            radius = 100 + 2 * math.sin(t / 12 + i)
+            c.create_oval(x + math.cos(angle)*radius-1.5, y + math.sin(angle)*radius-1.5,
+                          x + math.cos(angle)*radius+1.5, y + math.sin(angle)*radius+1.5,
+                          fill=active, outline="")
         # Transparent window with concentric glow, thin rotating rings and illuminated core.
         for radius, color, width in [(99, "#123043", 2), (94, "#175976", 2),
                                      (86, "#0b3349", 8), (75, "#155e7d", 2),
@@ -220,12 +230,12 @@ class Orb:
                           fill="#267b9d", width=2)
         halo = 40 + (2.8 * math.sin(t / 15))
         c.create_oval(x-halo, y-halo, x+halo, y+halo, fill="#0b3246",
-                      outline="#59d8f0", width=2)
-        c.create_oval(x-31, y-31, x+31, y+31, fill="#125773", outline="#65efff", width=2)
+                      outline=active, width=2)
+        c.create_oval(x-31, y-31, x+31, y+31, fill="#125773", outline=active, width=2)
         c.create_text(x, y-4, text="J", fill="#e8fdff", font=("Segoe UI", 27, "bold"))
         status = {"ready":"EN LÍNEA", "listening":"ESCUCHANDO",
                   "working":"PROCESANDO", "speaking":"RESPONDIENDO"}[self.mode]
-        c.create_text(x, y+23, text=status, fill="#92edfb",
+        c.create_text(x, y+23, text=status, fill=active,
                       font=("Consolas", 6, "bold"))
 
     def animate(self):
