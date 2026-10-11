@@ -14,6 +14,7 @@ from .voice import speak, listen_once
 from .intent_router import information_title
 from .panel_renderer import render
 from .sound import play
+from .vision import capture as capture_screen
 import math
 
 BG = "#080f1d"
@@ -91,6 +92,7 @@ class Desktop:
         nav("♫   Configurar voz", self.voice_settings_window)
         nav("◉   Diagnóstico", lambda: self.quick_command("diagnostico completo"))
         nav("▤   Monitor PC", lambda: self.quick_command("monitor del sistema"))
+        nav("◉   Capturar pantalla", self.capture_with_consent)
         nav("■   Parar acciones", lambda: self.quick_command("deten jarvis"))
         tk.Frame(side, bg="#26425a", height=1).pack(fill="x", pady=(26, 16))
         tk.Label(side, text="ACCESOS RÁPIDOS", bg="#0e1b2b", fg="#7994ad",
@@ -293,7 +295,22 @@ class Desktop:
             done(answer, None)
             if intent.kind == "ai" and intent.visual:
                 self.show_information(msg, answer)
+            if intent.kind == "vision":
+                self.capture_with_consent()
         self.worker(job, routed)
+
+    def capture_with_consent(self):
+        """Consent is requested on the Tk main thread for each screenshot."""
+        approved = messagebox.askyesno(
+            "JARVIS | Capturar pantalla",
+            "¿Autorizas guardar una captura de tu pantalla completa en tu carpeta local de JARVIS?\\n\\n"
+            "Podría contener datos personales. No se enviará a ninguna IA automáticamente.",
+            parent=self.root)
+        if not approved:
+            self.add("PRIVACIDAD", "Captura cancelada.")
+            return
+        self.worker(lambda: capture_screen(confirmed=True),
+                    lambda result, error: self.add("PANTALLA", "Error: " + error if error else result))
 
     def voice_settings_window(self):
         win = tk.Toplevel(self.root)
