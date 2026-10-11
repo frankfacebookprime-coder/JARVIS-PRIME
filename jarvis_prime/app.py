@@ -151,8 +151,20 @@ class Desktop:
                               font=("Segoe UI", 11), wrap="word", relief="flat",
                               padx=22, pady=15, state="disabled", spacing3=5)
         self.output.pack(fill="both", expand=True, padx=26, pady=(0, 12))
+        self.knowledge_host = tk.Frame(main, bg="#0b1828")
+        self.knowledge_canvas = tk.Canvas(self.knowledge_host, bg="#0b1828", highlightthickness=0)
+        self.knowledge_scroll = ttk.Scrollbar(self.knowledge_host, orient="vertical", command=self.knowledge_canvas.yview)
+        self.knowledge_content = tk.Frame(self.knowledge_canvas, bg="#0b1828")
+        self.knowledge_frame_id = self.knowledge_canvas.create_window((0,0), window=self.knowledge_content, anchor="nw")
+        self.knowledge_canvas.bind("<Configure>", lambda e: self.knowledge_canvas.itemconfigure(self.knowledge_frame_id, width=e.width))
+        self.knowledge_content.bind("<Configure>", lambda e: self.knowledge_canvas.configure(scrollregion=self.knowledge_canvas.bbox("all")))
+        self.knowledge_canvas.configure(yscrollcommand=self.knowledge_scroll.set)
+        self.knowledge_scroll.pack(side="right", fill="y")
+        self.knowledge_canvas.pack(side="left", fill="both", expand=True)
+        self.info_visible = False
         self.add("SISTEMA", "Bienvenido a JARVIS PRIME. Prueba: puedes abrir YouTube en Google · abre Word · busca gatos en Google.")
         bottom = tk.Frame(main, bg=BG)
+        self.bottom = bottom
         bottom.pack(fill="x", padx=26, pady=(0, 22))
         self.entry = tk.Entry(bottom, bg=PANEL2, fg=FG, insertbackground=FG,
                               relief="flat", font=("Segoe UI", 12))
@@ -182,7 +194,7 @@ class Desktop:
             self.hud.create_arc(x-radius, y-radius, x+radius, y+radius,
                                 start=angle, extent=75, style="arc", outline="#a2f8ff", width=3)
         self.hud.create_text(x, y, text="J", fill="#d4faff", font=("Segoe UI", 27, "bold"))
-        self.hud.create_text(x, y+65, text="VOICE • ONLINE", fill=ACCENT, font=("Consolas", 9, "bold"))
+        self.hud.create_text(x, y+65, text="JARVIS CORE • READY", fill=ACCENT, font=("Consolas", 9, "bold"))
 
     def animate_hud(self):
         self.hud_phase = (self.hud_phase + 2) % 360
@@ -190,15 +202,17 @@ class Desktop:
         self.root.after(60, self.animate_hud)
 
     def dismiss_information(self):
+        """Return to chat inside the same panel."""
         if self.knowledge_timeout_job is not None:
             try:
                 self.root.after_cancel(self.knowledge_timeout_job)
             except tk.TclError:
                 pass
             self.knowledge_timeout_job = None
-        window = getattr(self, "knowledge_window", None)
-        if window is not None and window.winfo_exists() and window.state() != "withdrawn":
-            window.withdraw()
+        if getattr(self, "info_visible", False):
+            self.knowledge_host.pack_forget()
+            self.output.pack(fill="both", expand=True, padx=26, pady=(0, 12), before=self.bottom)
+            self.info_visible = False
             play("dismiss")
 
     def schedule_knowledge_timeout(self):
@@ -206,33 +220,20 @@ class Desktop:
             self.root.after_cancel(self.knowledge_timeout_job)
             self.knowledge_timeout_job = None
         timeout = max(0, min(int(load_settings().get("info_panel_timeout", 0)), 3600))
-        if timeout:
+        if timeout and self.info_visible:
             self.knowledge_timeout_job = self.root.after(timeout * 1000, self.dismiss_information)
 
     def show_information(self, question, answer):
-        """Readable scrollable knowledge board; output is treated only as text."""
-        if getattr(self, "knowledge_window", None) is None or not self.knowledge_window.winfo_exists():
-            self.knowledge_window = tk.Toplevel(self.root)
-            self.knowledge_window.title("JARVIS PRIME | Knowledge Display")
-            self.knowledge_window.geometry("820x690")
-            self.knowledge_window.configure(bg="#0b1828")
-            container = tk.Frame(self.knowledge_window, bg="#0b1828")
-            container.pack(fill="both", expand=True)
-            canvas = tk.Canvas(container, bg="#0b1828", highlightthickness=0)
-            scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-            self.knowledge_content = tk.Frame(canvas, bg="#0b1828")
-            window_id = canvas.create_window((0, 0), window=self.knowledge_content, anchor="nw")
-            def resize(event):
-                canvas.itemconfigure(window_id, width=event.width)
-            canvas.bind("<Configure>", resize)
-            self.knowledge_content.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
-            canvas.configure(yscrollcommand=scrollbar.set)
-            scrollbar.pack(side="right", fill="y")
-            canvas.pack(side="left", fill="both", expand=True)
+        """Render one knowledge view embedded in the Command Center."""
+        if not getattr(self, "info_visible", False):
+            self.output.pack_forget()
+            self.knowledge_host.pack(fill="both", expand=True, padx=26, pady=(0, 12), before=self.bottom)
+            self.info_visible = True
         render(self.knowledge_content, information_title(question), answer)
+        self.knowledge_canvas.yview_moveto(0)
         self.schedule_knowledge_timeout()
-        self.knowledge_window.deiconify()
-        self.knowledge_window.lift()
+        self.root.deiconify()
+        self.root.lift()
         play("panel")
 
     def show_apps(self):
@@ -394,7 +395,7 @@ class Desktop:
                            vosk_model_path=path.get().strip(), info_panel_timeout=timeout.get(),
                            sounds=sounds.get())
             save_settings(updated)
-            self.schedule_knowledge_timeout() if getattr(self, "knowledge_window", None) else None
+            self.schedule_knowledge_timeout() if self.info_visible else None
             win.destroy()
             self.add("SISTEMA", "Modo de activación guardado: " + selected)
         self.button(win, "APLICAR ACTIVACIÓN", save_activation).pack(fill="x", padx=26, pady=(13,0))
