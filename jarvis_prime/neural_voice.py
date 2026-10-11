@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import winsound
 
 def piper_model():
     candidate = os.environ.get("JARVIS_PIPER_MODEL", "")
@@ -37,5 +36,6 @@ def speak_neural(text):
         filename = str(Path(folder) / "speech.wav")
         with wave.open(filename, "wb") as wave_file:
             voice.synthesize_wav(text[:1200], wave_file)
+        import winsound
         winsound.PlaySound(filename, winsound.SND_FILENAME)
     return True
