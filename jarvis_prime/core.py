@@ -104,6 +104,8 @@ def execute(text):
     intent = classify(value)
     if intent.kind == "empty":
         return intent, "Escribe o dicta una solicitud."
+    if intent.kind in ("dismiss_info", "hide_panel"):
+        return intent, "Cerrando panel solicitado."
     if intent.kind == "panel":
         return intent, "Abriendo panel."
     if intent.kind == "guardian":
