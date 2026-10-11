@@ -1,31 +1,54 @@
-# JARVIS PRIME v0.1
+# JARVIS PRIME v0.2 — Centro de control para Windows
 
-Asistente modular de escritorio para Windows. Primera versión funcional escrita desde cero.
+Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
 
-## Instalación
-Requiere Windows 10/11 y Python 3.10 o superior.
+## Instalación (Windows 10/11, Python 3.10+)
 
-1. Descarga el ZIP desde **Code > Download ZIP** y descomprímelo.
-2. Abre PowerShell en la carpeta del proyecto.
+1. Descarga **Code → Download ZIP** (o clona el repositorio) y descomprime en una carpeta fija.
+2. Abre PowerShell en esa carpeta.
 3. Ejecuta `powershell -ExecutionPolicy Bypass -File .\install.ps1`.
 4. Ejecuta `powershell -ExecutionPolicy Bypass -File .\start.ps1`.
 
-Para activar conversación con IA, edita el archivo local `.env` con tu clave, URL de API compatible con OpenAI y modelo. **Nunca publiques .env.**
+### Conectar una IA
+1. Pulsa **CONFIGURAR IA**.
+2. Escoge **OpenRouter**, **OpenAI**, **DeepSeek** o **Personalizado / OmniRouter**.
+3. Pega la API Key (para servicios locales que no requieran autenticación, usa la clave ficticia que admita tu servidor).
+4. Pulsa **BUSCAR MODELOS**, selecciona uno o escribe el ID manualmente.
+5. Pulsa **PROBAR API** y luego **GUARDAR Y USAR ESTA IA**.
 
-## Funciones disponibles
-- HUD oscuro de escritorio y chat no bloqueante.
-- Memoria SQLite persistente: `recuerda comprar leche`, `qué recuerdas`.
-- Comandos permitidos: `abrir calculadora`, `abrir bloc de notas`.
-- Chat con un proveedor externo compatible con OpenAI (opcional).
-- Sin ejecución arbitraria de código ni comandos por parte de la IA.
+**Nota:** el botón de detectar modelos requiere que el proveedor exponga `GET /models`. Si no existe, escribe manualmente el modelo. La prueba real utiliza `POST /chat/completions` y puede consumir créditos.
+
+### Funciones actuales
+- Interfaz de escritorio oscura con chat y centro de configuración.
+- API OpenAI-compatible con selección de proveedor y modelo.
+- API Key almacenada cifrada con **Windows DPAPI**, vinculada al usuario de Windows, en `%USERPROFILE%\.jarvis-prime\api.key.dpapi`; no se sube a GitHub.
+- Preferencias locales en `%USERPROFILE%\.jarvis-prime\settings.json`.
+- Memoria SQLite persistente en `%USERPROFILE%\.jarvis-prime\memory.sqlite3`.
+- Comandos de prueba: `abrir calculadora`, `abrir bloc de notas`, `recuerda comprar leche`, `qué recuerdas`.
+- Chat y pruebas de red sin bloquear la interfaz.
+- El asistente **no ejecuta código arbitrario** generado por la IA.
+
+### Actualizar sin perder datos
+1. **Cierra JARVIS PRIME**.
+2. Haz copia de seguridad de la carpeta de instalación y de `%USERPROFILE%\.jarvis-prime` antes de actualizar.
+3. Reemplaza el código por la última versión de `main` o ejecuta `git pull --ff-only` si utilizaste git.
+4. Ejecuta nuevamente `install.ps1` y después `start.ps1`.
+5. Comprueba la memoria y la conexión desde **CONFIGURAR IA**.
+
+No copies contraseñas ni claves a conversaciones, tickets o capturas. No subas `.env` a GitHub.
 
 ## Arquitectura
-`jarvis_prime/app.py` (interfaz) → `jarvis_prime/core.py` (acciones permitidas, SQLite, API).
-
-## Próximas fases
-Voz española (PTT, VAD, STT/TTS), HUD animado, acciones Windows con confirmación, n8n, plugins y diagnóstico.
+- `jarvis_prime/app.py`: interfaz Tkinter (UI thread + cola para tareas asíncronas).
+- `jarvis_prime/config.py`: preferencias locales + protección DPAPI de credenciales.
+- `jarvis_prime/network.py`: validación de URLs, conexión y descubrimiento de modelos.
+- `jarvis_prime/core.py`: memoria, comandos explícitos y router básico.
 
 ## Pruebas
 `python -m unittest discover -s tests -v`
 
-El código es nuevo; las licencias de terceros se revisarán antes de incorporar componentes externos.
+La prueba automática de Windows está en GitHub Actions. El funcionamiento visual y la integración con proveedores reales requieren prueba en tu PC.
+
+## Próximos módulos
+Voz en español (PTT/VAD/STT/TTS), HUD circular animado, sesiones de chat, manejo seguro de ventanas/archivos, n8n y plugins, autodiagnóstico, actualizador con rollback.
+
+El código de esta versión es propio. Antes de integrar componentes de terceros revisaremos sus licencias.
