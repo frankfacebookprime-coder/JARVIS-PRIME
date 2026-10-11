@@ -5,6 +5,7 @@ Only Tkinter/stdlib at import time. No permanent listening, no hidden microphone
 import math
 import queue
 import threading
+import time
 import tkinter as tk
 
 from .app import Desktop
@@ -51,6 +52,7 @@ class Orb:
         self.messages = queue.Queue()
         self.panel = None
         self.drag_start = None
+        self.suppress_click_until = 0.0
         self.dragged = False
         self.single_click_job = None
         self.canvas.bind("<ButtonPress-1>", self.start_drag)
@@ -82,7 +84,7 @@ class Orb:
             self.root.geometry(f"+{winx + dx}+{winy + dy}")
 
     def end_drag(self, event):
-        if self.drag_start is not None and not self.dragged:
+        if self.drag_start is not None and not self.dragged and time.monotonic() >= self.suppress_click_until:
             if self.single_click_job is not None:
                 self.root.after_cancel(self.single_click_job)
             self.single_click_job = self.root.after(250, self.single_click)
@@ -90,9 +92,11 @@ class Orb:
 
     def single_click(self):
         self.single_click_job = None
-        self.listen()
+        if time.monotonic() >= self.suppress_click_until:
+            self.listen()
 
     def double_click(self, event):
+        self.suppress_click_until = time.monotonic() + 0.55
         if self.single_click_job is not None:
             self.root.after_cancel(self.single_click_job)
             self.single_click_job = None
