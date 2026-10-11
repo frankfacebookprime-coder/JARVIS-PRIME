@@ -1,6 +1,31 @@
-# JARVIS PRIME v0.6 — Esfera flotante y visualización inteligente
+# JARVIS PRIME v0.7 — Voz neuronal, control de ventanas y esfera reactiva
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
+
+## Novedades v0.7: proyectos open source
+
+Se estudiaron estas herramientas, sin copiar código ajeno directamente:
+
+- [Piper TTS](https://github.com/rhasspy/piper) para voz neuronal local en español. La integración es **opcional** y usa primero Piper si se instaló y configuró un modelo; de lo contrario utiliza la voz de Windows. Los modelos de voz tienen **licencias propias**, que debes revisar antes de descargarlos y distribuirlos.
+- [pywinauto](https://github.com/pywinauto/pywinauto) (BSD-3-Clause) para detectar ventanas y enfocar una ventana concreta. Se instala desde el instalador; no permite ejecutar comandos arbitrarios.
+- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) como referencia para futuras mejoras del panel. **No se ha migrado la interfaz a esta biblioteca**. La esfera sí incorpora anillos con colores reactivos según su estado.
+
+### Activar voz neuronal Piper en Windows
+
+1. Ejecuta `.venv\\Scripts\\python.exe -m pip install piper-tts` en la carpeta del proyecto.
+2. Obtén de un repositorio confiable un modelo compatible de Piper en español, revisa la licencia específica de la voz y coloca **ambos archivos** `.onnx` y `.onnx.json` en `%USERPROFILE%\\.jarvis-prime\\voices`.
+3. Usa el nombre predeterminado `es_MX-ald-medium.onnx` y `es_MX-ald-medium.onnx.json`, **o** configura la variable de entorno `JARVIS_PIPER_MODEL` con la ruta completa de tu modelo.
+4. Reinicia JARVIS. Si Piper no está disponible o falla, JARVIS usa Windows SAPI como alternativa.
+
+La voz neuronal puede usar CPU y consumir más memoria que SAPI. No se descarga ningún modelo automáticamente y la calidad depende de la voz escogida.
+
+### Nuevas órdenes de control de ventanas
+
+- «Qué ventanas tengo abiertas»: lista los títulos de ventanas visibles.
+- «Cambia a Chrome»: enfoca la ventana cuando existe una sola coincidencia.
+- «Enfoca Word»: cambia el foco si el nombre coincide sin ambigüedad.
+
+Si hay varias ventanas coincidentes, JARVIS pide especificar el título. No escribe, hace clic, cierra programas ni borra archivos por estas órdenes.
 
 ## Modo flotante (v0.6)
 
@@ -107,4 +132,4 @@ La prueba automática de Windows está en GitHub Actions. El funcionamiento visu
 ## Próximos módulos
 Voz en español (PTT/VAD/STT/TTS), HUD circular animado, sesiones de chat, manejo seguro de ventanas/archivos, n8n y plugins, autodiagnóstico, actualizador con rollback.
 
-El código de esta versión es propio. Antes de integrar componentes de terceros revisaremos sus licencias.
+El código específico de integración de esta versión es propio. Las dependencias externas conservan sus licencias respectivas; los modelos de voz deben revisarse individualmente.
