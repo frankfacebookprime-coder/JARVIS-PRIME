@@ -1,6 +1,23 @@
-# JARVIS PRIME v1.2 — Activación por palabra clave, doble aplauso y HUD avanzado
+# JARVIS PRIME v1.3 — Panel único integrado y activación corregida
 
 Asistente modular y extensible. **Ahora puedes conectar tu IA directamente desde el panel**, sin editar archivos manualmente.
+
+## v1.3: cambios para mejorar el uso real
+
+- **Una sola interfaz**: la esfera flotante sigue en el escritorio; al abrir JARVIS aparece el Command Center con una esfera animada integrada. El chat y la información generada se muestran **dentro del mismo panel**, alternándose en el área central sin abrir ventanas nuevas. La siguiente orden retira la vista informativa anterior.
+- **Activación mejorada**: Vosk examina resultados parciales para responder antes a «Jarvis». El doble aplauso requiere **dos golpes separados con silencio intermedio**, con umbral de ruido adaptativo. Es un detector experimental que puede necesitar calibración en el equipo y con el micrófono reales.
+- **Entrega del micrófono**: antes de escuchar la orden, JARVIS deja salir al detector ambiental, reduciendo conflictos entre las dos bibliotecas de grabación.
+- **Estado visible**: la esfera muestra mensajes breves de arranque/errores de activación, no solamente la animación.
+- **Sonidos renovados**: tonos sintetizados menos agudos, más cortos y suaves, con reproducción serializada para evitar superposición. Los sonidos pueden desactivarse.
+- **Modo BOTH sin modelo**: cuando falta la carpeta Vosk en ejecución, el doble aplauso puede seguir funcionando y se informa del problema. Para reconocer palabras se requiere un modelo Vosk válido y cargable.
+- **Panel de información**: se mantiene visible o se oculta según el temporizador configurado. «Cierra la información» vuelve al chat. No crea ventanas Knowledge Display adicionales.
+- **Pruebas**: se verifican dos impulsos separados, no contar un aplauso prolongado dos veces y detección de palabra por límites de palabra.
+
+### Para actualizar sin repetir problemas
+
+Cierra todas las instancias antiguas de JARVIS y verifica que DeepSeek Harness instale desde `main` la última revisión (no un ZIP o copia anterior). Vuelve a ejecutar `install.ps1`, manteniendo `%USERPROFILE%\\.jarvis-prime` sin borrarla. Para activar `wake` o `both` configura una carpeta **real** de modelo español Vosk en «Activación de voz». En `clap` no necesitas Vosk. Si no responde a aplausos, prueba primero `clap` en una habitación silenciosa con dos palmadas cortas espaciadas aproximadamente 0,3–0,6 s; consulta los mensajes de Activación del panel. El micrófono ambiental consume recursos solo en modos activos y las frases después de activarlo siguen usando reconocimiento remoto según la configuración actual.
+
+La validación de GitHub Actions confirma pruebas automatizadas de código, **no** prueba acústica, interfaz gráfica o dispositivos físicos. Haz esas pruebas en Windows antes de considerar la activación confiable.
 
 ## Novedades v1.2 — Activación ambiental opcional
 
